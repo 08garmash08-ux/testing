@@ -10,7 +10,13 @@ A browser game: your camera, your real face, your best **sigma face**.
    - **See result** — scans the photo and shows your mog rating in %, plus every face shape (eyes, jawline, cheekbones, symmetry, face harmony, sigma aura) marked as *perfect* or *not perfect*.
    - **Restart photo** — throws the shot away so you can take it again if it came out wrong.
 
-The photo also gets shape lines drawn over it: face box, symmetry axis, eye ellipses, cheekbone lines and the jaw curve.
+## When you get no mog
+
+A score is not handed out for free:
+
+- **No face in the photo** — nothing is scored. No face, no mog.
+- **Face too far** — under 5% of the frame is too small to read any shape. Come closer and retake.
+- **Normal face** — if you are smiling, the shapes are still listed but the verdict is **NO MOG**. A normal face never mogs anyone.
 
 ## Running it
 
@@ -34,6 +40,8 @@ Nothing is faked with a random number — every score comes from the pixels of y
 - **jawline** / **cheekbones** = edge energy in the lower and middle bands,
 - **face harmony** = how close the box height/width is to the golden ratio,
 - **sigma aura** = overall contrast plus how much of the frame your face fills.
+
+A face only counts when the skin blob actually fills its own box (density), has a face-like height/width ratio, and covers enough of the frame — that is what stops an empty room from scoring. The smile check looks for teeth (bright, unsaturated pixels) and movement in the mouth band; an open smile is caught reliably, a tight closed-lip smile can still slip through.
 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 

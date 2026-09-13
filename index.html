@@ -245,15 +245,49 @@
         if(isSkin(d[i], d[i+1], d[i+2])){ xs.push(x); ys.push(y); }
       }
     }
-    const enough = xs.length > (w*h)/9 * 0.02;
-    if(!enough){                                   // no face found -> centre crop
-      return {x0:w*0.25, x1:w*0.75, y0:h*0.12, y1:h*0.88, found:false, fill:0};
-    }
+    const sampled = Math.ceil(w/3) * Math.ceil(h/3);
+    if(xs.length < sampled * 0.005) return {found:false, reason:'none'};
+
     xs.sort((a,b) => a-b); ys.sort((a,b) => a-b);
     const q = (arr,p) => arr[Math.floor((arr.length-1)*p)];
     const x0 = q(xs,.06), x1 = q(xs,.94), y0 = q(ys,.04), y1 = q(ys,.96);
-    const fill = xs.length / ((w/3)*(h/3));
-    return {x0, x1, y0, y1, found:true, fill};
+    const bw = x1 - x0, bh = y1 - y0;
+
+    // a real face fills its own box; scattered skin-ish walls and furniture do not
+    let inside = 0;
+    for(let k = 0; k < xs.length; k++){
+      if(xs[k] >= x0 && xs[k] <= x1 && ys[k] >= y0 && ys[k] <= y1) inside++;
+    }
+    const density = inside / Math.max(1, (bw/3) * (bh/3));
+    const area = (bw*bh) / (w*h);
+    const ratio = bh / Math.max(1, bw);
+
+    if(density < 0.34) return {found:false, reason:'none'};
+    if(ratio < 0.75 || ratio > 2.4) return {found:false, reason:'none'};
+    if(area < 0.05) return {found:false, reason:'far'};
+    return {x0, x1, y0, y1, found:true, fill:area, density};
+  }
+
+  // mouth band: teeth and movement give away a normal, friendly face
+  function mouthCheck(img, box){
+    const {width:w, data:d} = img;
+    const bw = box.x1 - box.x0, bh = box.y1 - box.y0;
+    const mx0 = Math.round(box.x0 + bw*0.25), mx1 = Math.round(box.x0 + bw*0.75);
+    const my0 = Math.round(box.y0 + bh*0.60), my1 = Math.round(box.y0 + bh*0.92);
+    let teeth = 0, n = 0, sum = 0, sum2 = 0;
+    for(let y = my0; y < my1; y++){
+      for(let x = mx0; x < mx1; x++){
+        const i = (y*w + x) * 4, r = d[i], g = d[i+1], b = d[i+2];
+        const l = 0.299*r + 0.587*g + 0.114*b;
+        const sat = Math.max(r,g,b) - Math.min(r,g,b);
+        if(l > 195 && sat < 32) teeth++;
+        sum += l; sum2 += l*l; n++;
+      }
+    }
+    if(!n) return {teeth:0, sd:0, smiling:false};
+    const mean = sum/n, sd = Math.sqrt(Math.max(0, sum2/n - mean*mean));
+    const t = teeth/n;
+    return {teeth:t, sd, smiling: t > 0.05 || sd > 48};
   }
 
   // grey patch of the face box, resampled to n x n
@@ -303,6 +337,8 @@
 
   function analyse(img){
     const box = faceBox(img);
+    if(!box.found) return {ok:false, reason:box.reason};
+    const mouth = mouthCheck(img, box);
     const n = 64, p = patch(img, box, n);
 
     // symmetry: left half vs mirrored right half
@@ -340,62 +376,7 @@
 
     const weights = [.22, .2, .15, .18, .12, .13];
     const score = Math.round(traits.reduce((s,t,i) => s + t.v*weights[i], 0));
-    return {box, traits, score, found: box.found, ratio};
-  }
-
-  /* ---------- shape overlay drawn on the photo ---------- */
-  function drawShapes(box){
-    const {x0, x1, y0, y1} = box;
-    const w = x1 - x0, h = y1 - y0;
-    const s = Math.max(1, shot.width / 640);
-
-    ctx.save();
-    ctx.lineWidth = 2 * s;
-    ctx.font = `${11*s}px "Segoe UI", sans-serif`;
-
-    const label = (t, x, y) => {
-      ctx.fillStyle = 'rgba(7,8,13,.72)';
-      const pad = 4*s, tw = ctx.measureText(t).width;
-      ctx.fillRect(x - pad, y - 11*s, tw + pad*2, 15*s);
-      ctx.fillStyle = '#7cf6c8'; ctx.fillText(t, x, y);
-    };
-
-    // face box
-    ctx.strokeStyle = 'rgba(139,124,255,.9)';
-    ctx.setLineDash([10*s, 7*s]);
-    ctx.strokeRect(x0, y0, w, h);
-    ctx.setLineDash([]);
-    label('FACE', x0 + 4*s, y0 - 6*s);
-
-    // symmetry axis
-    ctx.strokeStyle = 'rgba(232,235,255,.35)';
-    ctx.beginPath(); ctx.moveTo(x0 + w/2, y0); ctx.lineTo(x0 + w/2, y1); ctx.stroke();
-
-    // eyes
-    ctx.strokeStyle = '#7cf6c8';
-    const ey = y0 + h*0.35, ew = w*0.15, eh = h*0.055;
-    for(const ex of [x0 + w*0.30, x0 + w*0.70]){
-      ctx.beginPath(); ctx.ellipse(ex, ey, ew, eh, 0, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(ex, ey, eh*0.45, 0, Math.PI*2); ctx.stroke();
-    }
-    label('EYES', x0 + w*0.30 - ew, ey - eh - 8*s);
-
-    // cheekbone lines
-    ctx.strokeStyle = 'rgba(255,209,102,.85)';
-    ctx.beginPath();
-    ctx.moveTo(x0 + w*0.14, y0 + h*0.50); ctx.lineTo(x0 + w*0.40, y0 + h*0.58);
-    ctx.moveTo(x0 + w*0.86, y0 + h*0.50); ctx.lineTo(x0 + w*0.60, y0 + h*0.58);
-    ctx.stroke();
-    label('CHEEKBONES', x0 + w*0.14, y0 + h*0.50 - 8*s);
-
-    // jaw curve
-    ctx.strokeStyle = '#ff6b8a';
-    ctx.beginPath();
-    ctx.moveTo(x0 + w*0.10, y0 + h*0.60);
-    ctx.quadraticCurveTo(x0 + w*0.50, y1 + h*0.10, x0 + w*0.90, y0 + h*0.60);
-    ctx.stroke();
-    label('JAWLINE', x0 + w*0.36, y1 - 4*s);
-    ctx.restore();
+    return {ok:true, box, traits, score, mouth, ratio};
   }
 
   /* ---------- result ---------- */
@@ -411,10 +392,38 @@
     return ['HARD MOGGED', 'Brutal. Restart the photo and try an actual sigma face.'];
   }
 
+  const NO_SCORE = {
+    none: ['NO FACE — NOT SCORED',
+      'There is no face in this photo, so nobody mogged anybody. Get in front of the camera and take the photo again.'],
+    far: ['FACE TOO FAR — NOT SCORED',
+      'Your face is too small in the frame to read any shape. Come closer to the camera and take the photo again.'],
+    smile: ['NORMAL FACE — NO MOG',
+      'You are smiling. A normal face never mogs anyone — drop the smile, hold a real sigma face and take the photo again.']
+  };
+
+  function noScore(kind, traits){
+    const [title, msg] = NO_SCORE[kind];
+    return `
+      <div class="scorecard">
+        <div class="big"><b>—</b><span>no mog</span></div>
+        <div class="verdict no">${title}</div>
+        <p class="flavor">${msg}</p>
+        ${traits ? traits.map(t => `
+          <div class="trait ${tierOf(t.v)}">
+            <div class="top"><span class="name">${t.name}</span>
+              <span class="tag">${t.v}% &middot; ${tagOf(t.v)}</span></div>
+            <div class="bar"><i data-w="${t.v}"></i></div>
+            <div class="note">${t.v >= 75 ? t.good : t.bad}</div>
+          </div>`).join('') + '<p class="flavor" style="margin:18px 0 0">Shapes were read, but a smiling face does not count as a mog.</p>' : ''}
+      </div>`;
+  }
+
   function showResult(){
     if(!frozen) return;
     const a = analyse(frozen);
-    drawShapes(a.box);
+
+    if(!a.ok){ render(noScore(a.reason)); return; }
+    if(a.mouth.smiling){ render(noScore('smile', a.traits)); return; }
 
     const [title, flavor] = verdictOf(a.score);
     const worst = [...a.traits].sort((x,y) => x.v - y.v)[0];
@@ -424,7 +433,7 @@
     try{ best = Math.max(+(localStorage.getItem('mog-best') || 0), a.score);
          localStorage.setItem('mog-best', best); }catch(e){ best = a.score; }
 
-    result.innerHTML = `
+    render(`
       <div class="scorecard">
         <div class="big"><b>${a.score}%</b><span>mog rating</span></div>
         <div class="verdict ${scoreTier(a.score)}">${title}</div>
@@ -439,10 +448,13 @@
         <p class="flavor" style="margin:18px 0 0">
           ${perfect} of ${a.traits.length} shapes are perfect.
           ${a.score >= 90 ? 'The whole face is perfect.' : `Weakest shape: <b>${worst.name}</b> — that is the one stopping a perfect face.`}
-          ${a.found ? '' : '<br>No face detected in the frame — scanned the centre of the photo instead.'}
         </p>
         <div class="best">session best &middot; ${best}%</div>
-      </div>`;
+      </div>`);
+  }
+
+  function render(html){
+    result.innerHTML = html;
     result.classList.remove('hidden');
     requestAnimationFrame(() => result.querySelectorAll('.bar i')
       .forEach(el => el.style.width = el.dataset.w + '%'));
