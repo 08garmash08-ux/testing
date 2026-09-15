@@ -1,0 +1,17 @@
+{
+  "name": "school-simulator",
+  "version": "1.0.0",
+  "description": "A school life simulator that runs in any browser and installs on Android, iOS and desktop.",
+  "private": true,
+  "scripts": {
+    "start": "node tools/serve.js 8080",
+    "serve": "node tools/serve.js",
+    "icons": "python3 tools/make-icons.py",
+    "check": "node tools/check.js",
+    "android:add": "npx --yes @capacitor/cli@latest add android",
+    "android:sync": "npx --yes @capacitor/cli@latest sync android",
+    "android:open": "npx --yes @capacitor/cli@latest open android"
+  },
+  "keywords": ["game", "simulator", "school", "pwa", "canvas", "android", "mobile"],
+  "license": "MIT"
+}

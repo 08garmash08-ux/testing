@@ -1,0 +1,17 @@
+{
+  "appId": "com.example.schoolsim",
+  "appName": "School Simulator",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#12151c"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#12151c"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

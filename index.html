@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>School Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="A school life simulator: go to class, sit exams, make friends and try to sleep. Runs in any browser, installs on Android, iOS and desktop.">
+<meta name="theme-color" content="#161a22">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="School Sim">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <header id="hud">
+    <div class="hud-block hud-left">
+      <div id="clock">07:00</div>
+      <div id="day" class="muted-line">Day 1</div>
+    </div>
+    <div class="hud-block hud-center">
+      <div id="period">Before school</div>
+      <div id="room" class="muted-line">Your Room</div>
+    </div>
+    <div class="hud-block hud-right">
+      <div id="money">$30</div>
+      <div class="hud-buttons">
+        <button id="btn-map" type="button" title="Campus map">MAP</button>
+        <button id="btn-speed" type="button" title="Change speed"><span id="speed-label">1x</span></button>
+      </div>
+    </div>
+  </header>
+
+  <div id="stats">
+    <div class="chip"><span class="chip-name">EN</span><div class="chip-track"><div id="bar-energy" class="chip-fill energy"></div></div><span id="stat-energy" class="chip-val">0</span></div>
+    <div class="chip"><span class="chip-name">ST</span><div class="chip-track"><div id="bar-stress" class="chip-fill stress"></div></div><span id="stat-stress" class="chip-val">0</span></div>
+    <div class="chip"><span class="chip-name">FD</span><div class="chip-track"><div id="bar-hunger" class="chip-fill hunger"></div></div><span id="stat-hunger" class="chip-val">0</span></div>
+    <div class="chip"><span class="chip-name">SO</span><div class="chip-track"><div id="bar-social" class="chip-fill social"></div></div><span id="stat-social" class="chip-val">0</span></div>
+  </div>
+
+  <div id="hud-warn" class="hidden">Running on empty</div>
+
+  <div id="focus-bar" class="hidden">
+    <span class="focus-title">FOCUS</span>
+    <div class="focus-track">
+      <div id="focus-zone"></div>
+      <div id="focus-marker"></div>
+    </div>
+    <span id="focus-value">x1.00</span>
+  </div>
+
+  <div id="prompt" class="hidden"></div>
+
+  <div id="touch">
+    <button id="btn-focus" class="round focus hidden" type="button">FOCUS</button>
+    <button id="btn-interact" class="round" type="button">USE</button>
+    <button id="btn-menu" class="round small" type="button">MENU</button>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="overlay" class="hidden"></div>
+</div>
+
+<noscript>
+  <p style="color:#fff;font:16px system-ui;padding:24px">School Simulator needs JavaScript to run.</p>
+</noscript>
+
+<script src="assets/js/core/util.js"></script>
+<script src="assets/js/core/storage.js"></script>
+<script src="assets/js/core/pathfind.js"></script>
+<script src="assets/js/core/audio.js"></script>
+<script src="assets/js/core/input.js"></script>
+<script src="assets/js/data/map.js"></script>
+<script src="assets/js/data/questions.js"></script>
+<script src="assets/js/data/npcs.js"></script>
+<script src="assets/js/data/events.js"></script>
+<script src="assets/js/game/schedule.js"></script>
+<script src="assets/js/game/state.js"></script>
+<script src="assets/js/game/exams.js"></script>
+<script src="assets/js/game/world.js"></script>
+<script src="assets/js/game/actions.js"></script>
+<script src="assets/js/game/render.js"></script>
+<script src="assets/js/game/ui.js"></script>
+<script src="assets/js/game/main.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js').catch(function () { /* offline play is optional */ });
+    });
+  }
+</script>
+</body>
+</html>
