@@ -4,6 +4,21 @@ A school life simulator. You play one student through one semester: go to
 lessons, sit the papers, eat, sleep, train, argue with people in the library,
 and try to reach the final exams without falling apart.
 
+## Open it
+
+Pick whichever is easiest. You do not need to install anything for the first two.
+
+1. **One file, nothing installed.** Download
+   [`dist/school-simulator.html`](dist/school-simulator.html) and double-click
+   it. The whole game is inside that one file, so it opens in your browser
+   with no internet connection and nothing to set up. You can also email it to
+   yourself and open it on your phone.
+2. **From the repository page.** Click the green *Code* button, choose
+   *Download ZIP*, unzip it, and double-click `index.html`.
+3. **Served, with offline install.** If you have Node installed, run
+   `npm start` and open `http://localhost:8080`. This is the version you can
+   install to a phone home screen.
+
 It is a single web game with no build step and no dependencies, so the same
 files run on a PC browser, on Android, on iPhone and iPad, and on anything
 else with a modern browser. It installs to the home screen and plays offline.
@@ -109,7 +124,9 @@ assets/js/game/            simulation: schedule, state, exams, world, actions,
                            rendering, interface, and the main loop
 tools/serve.js             dependency-free static server
 tools/check.js             project self-check
+tools/build-single.js      inlines everything into dist/school-simulator.html
 tools/make-icons.py        regenerates the icon set
+dist/school-simulator.html the whole game as one openable file
 ```
 
 There is no bundler and no framework. Scripts are plain `<script>` tags that
@@ -125,8 +142,12 @@ repository contains no images or audio beyond the generated app icons.
 ```sh
 npm run check     # parses every script, then checks the map, questions,
                   # cast, events, offline cache list, and the game balance
+npm run build     # rebuilds dist/school-simulator.html, the one-file version
 npm run icons     # regenerates assets/icons from tools/make-icons.py
 ```
+
+Run `npm run build` after changing anything under `assets/`, or the one-file
+download will still hold the previous version.
 
 `npm run check` plays three full semesters headlessly and asserts that the
 game is still winnable and still losable: a player who attends everything and

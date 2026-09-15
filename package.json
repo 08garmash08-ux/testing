@@ -6,12 +6,21 @@
   "scripts": {
     "start": "node tools/serve.js 8080",
     "serve": "node tools/serve.js",
+    "build": "node tools/build-single.js",
     "icons": "python3 tools/make-icons.py",
     "check": "node tools/check.js",
     "android:add": "npx --yes @capacitor/cli@latest add android",
     "android:sync": "npx --yes @capacitor/cli@latest sync android",
     "android:open": "npx --yes @capacitor/cli@latest open android"
   },
-  "keywords": ["game", "simulator", "school", "pwa", "canvas", "android", "mobile"],
+  "keywords": [
+    "game",
+    "simulator",
+    "school",
+    "pwa",
+    "canvas",
+    "android",
+    "mobile"
+  ],
   "license": "MIT"
 }
