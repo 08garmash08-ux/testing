@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sigma Rush</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#07080d;
+    --panel:#11131d;
+    --line:#232741;
+    --txt:#e8ebff;
+    --dim:#8b90b5;
+    --acc:#7cf6c8;
+    --acc2:#8b7cff;
+    --bad:#ff6b8a;
+    --warn:#ffd166;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:
+      radial-gradient(900px 600px at 50% -10%, #1b1740 0%, transparent 60%),
+      var(--bg);
+    color:var(--txt);
+    font:15px/1.55 "IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:460px;margin:0 auto;padding:24px 16px 48px}
+  h1{
+    margin:0;text-align:center;font-family:"Chakra Petch","Segoe UI",sans-serif;
+    font-size:clamp(30px,9vw,52px);
+    letter-spacing:.16em;font-weight:800;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{text-align:center;color:var(--dim);letter-spacing:.3em;font-size:11px;margin:6px 0 18px;text-transform:uppercase}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+  .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center}
+  .pill span{display:block;color:var(--dim);letter-spacing:.18em;font-size:9px;text-transform:uppercase}
+  .pill b{font-family:"Chakra Petch","Segoe UI",sans-serif;font-variant-numeric:tabular-nums;font-size:17px;letter-spacing:.04em}
+  #lives{color:var(--bad);letter-spacing:.12em}
+  #lives.safe{color:var(--acc)}
+
+  .combo{margin-bottom:10px}
+  .combobar{height:7px;border-radius:99px;background:#1c1f31;overflow:hidden}
+  .combobar i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .12s linear}
+  .combolabel{display:flex;justify-content:space-between;margin-top:5px;
+    color:var(--dim);font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+  .combolabel b{color:var(--acc);font-family:"Chakra Petch","Segoe UI",sans-serif;letter-spacing:.08em}
+
+  .stage{
+    position:relative;background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;overflow:hidden;
+  }
+  canvas{display:block;width:100%;aspect-ratio:2/3;touch-action:none;cursor:crosshair}
+
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px;text-align:center;
+    padding:24px;background:rgba(7,8,13,.78);backdrop-filter:blur(2px);
+  }
+  .overlay.hidden{display:none}
+  .overlay h2{margin:0;font-family:"Chakra Petch","Segoe UI",sans-serif;
+    font-size:clamp(22px,7vw,34px);letter-spacing:.14em;font-weight:800}
+  .overlay p{color:var(--dim);margin:0;max-width:30ch;font-size:14px}
+  .overlay .big{font-family:"Chakra Petch","Segoe UI",sans-serif;font-variant-numeric:tabular-nums;
+    font-size:clamp(44px,15vw,72px);line-height:1;font-weight:700;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .overlay .rank{font-family:"Chakra Petch","Segoe UI",sans-serif;letter-spacing:.12em;font-weight:800;font-size:16px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;color:var(--dim);font-size:12px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+  button{
+    font:inherit;font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:12px 22px;border-radius:12px;border:1px solid var(--line);
+    background:#181b2b;color:var(--txt);cursor:pointer;transition:.15s;
+  }
+  button:hover{border-color:var(--acc);transform:translateY(-1px)}
+  button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#080a12;border-color:transparent}
+  button.ghost{background:transparent}
+  .hidden{display:none!important}
+
+  .help{color:var(--dim);font-size:12px;text-align:center;margin:14px 0 0}
+  .help b{color:var(--txt);font-weight:600}
+  .help a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SIGMA RUSH</h1>
+  <div class="sub">catch the aura &middot; dodge the cringe</div>
+
+  <div class="hud">
+    <div class="pill"><span>score</span><b id="score">0</b></div>
+    <div class="pill"><span>best</span><b id="best">0</b></div>
+    <div class="pill"><span>level</span><b id="level">1</b></div>
+    <div class="pill"><span>lives</span><b id="lives" class="safe">&#9670;&#9670;&#9670;</b></div>
+  </div>
+
+  <div class="combo">
+    <div class="combobar"><i id="combofill"></i></div>
+    <div class="combolabel"><span id="combotxt">combo 0</span><b id="mult">&times;1</b></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="400" height="600"></canvas>
+    <div id="overlay" class="overlay"></div>
+  </div>
+
+  <div class="row">
+    <button id="btnPause" class="ghost hidden">Pause</button>
+  </div>
+
+  <p class="help"><b>&larr; &rarr;</b> or <b>A</b>/<b>D</b> to move &middot; drag on the field to steer &middot; <b>space</b> start &middot; <b>P</b> pause</p>
+  <p class="help"><a href="index.html">&larr; back to Mog Your Face</a></p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const cvs = $('game'), ctx = cvs.getContext('2d');
+  const overlay = $('overlay'), btnPause = $('btnPause');
+  const elScore = $('score'), elBest = $('best'), elLevel = $('level'), elLives = $('lives');
+  const elFill = $('combofill'), elCombo = $('combotxt'), elMult = $('mult');
+
+  const W = 400, H = 600;                 // logical playfield units
+  const motionMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  const calm = () => motionMQ.matches;    // read live, the user can flip it mid-game
+
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  let best = 0;
+  try{ best = Math.max(0, +(localStorage.getItem('sigma-rush-best') || 0) || 0); }catch(e){}
+
+  /* ---------- state ---------- */
+  let state = 'ready';                    // ready | play | pause | over
+  let score, lives, combo, bestCombo, elapsed, spawnT, shield, invuln, shake, gridY;
+  let items, bits, texts, player;
+
+  function reset(){
+    score = 0; lives = 3; combo = 0; bestCombo = 0; elapsed = 0; spawnT = .5;
+    shield = false; invuln = 0; shake = 0; gridY = 0;
+    items = []; bits = []; texts = [];
+    player = { x: W / 2, y: H - 74, r: 17, vx: 0 };
+  }
+  reset();
+
+  const diff = () => Math.min(1, elapsed / 100);        // 0 -> 1 over the first 100s
+  const mult = () => Math.min(8, 1 + Math.floor(combo / 5));
+  const level = () => 1 + Math.floor(elapsed / 18);
+
+  /* ---------- input ---------- */
+  const keys = { left:false, right:false };
+  let pointerX = null;
+
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if(k === 'arrowleft' || k === 'a'){ keys.left = true; pointerX = null; e.preventDefault(); }
+    if(k === 'arrowright' || k === 'd'){ keys.right = true; pointerX = null; e.preventDefault(); }
+    if(k === ' ' || k === 'enter'){
+      e.preventDefault();
+      if(state === 'ready' || state === 'over') start();
+      else togglePause();
+    }
+    if(k === 'p' || k === 'escape'){ e.preventDefault(); togglePause(); }
+  });
+  addEventListener('keyup', e => {
+    const k = e.key.toLowerCase();
+    if(k === 'arrowleft' || k === 'a') keys.left = false;
+    if(k === 'arrowright' || k === 'd') keys.right = false;
+  });
+
+  function toField(clientX){
+    const r = cvs.getBoundingClientRect();
+    return clamp((clientX - r.left) / r.width * W, 0, W);
+  }
+  cvs.addEventListener('pointerdown', e => {
+    if(state === 'ready' || state === 'over') return;
+    cvs.setPointerCapture(e.pointerId);
+    pointerX = toField(e.clientX);
+  });
+  cvs.addEventListener('pointermove', e => { if(pointerX !== null) pointerX = toField(e.clientX); });
+  const dropPointer = () => { pointerX = null; };
+  cvs.addEventListener('pointerup', dropPointer);
+  cvs.addEventListener('pointercancel', dropPointer);
+
+  overlay.addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    if(!act) return;
+    if(act.dataset.act === 'start') start();
+    if(act.dataset.act === 'resume') togglePause();
+  });
+  btnPause.addEventListener('click', togglePause);
+  addEventListener('blur', () => { if(state === 'play') togglePause(); });
+  document.addEventListener('visibilitychange', () => { if(document.hidden && state === 'play') togglePause(); });
+
+  /* ---------- flow ---------- */
+  function start(){
+    reset();
+    state = 'play';
+    overlay.classList.add('hidden');
+    btnPause.classList.remove('hidden');
+    btnPause.textContent = 'Pause';
+  }
+  function togglePause(){
+    if(state === 'play'){ state = 'pause'; btnPause.textContent = 'Resume'; render(); }
+    else if(state === 'pause'){ state = 'play'; overlay.classList.add('hidden'); btnPause.textContent = 'Pause'; }
+  }
+  function gameOver(){
+    state = 'over';
+    btnPause.classList.add('hidden');
+    if(score > best){
+      best = score;
+      try{ localStorage.setItem('sigma-rush-best', best); }catch(e){}
+    }
+    render();
+  }
+
+  function rankOf(s){
+    if(s >= 4000) return ['CERTIFIED SIGMA', 'Nobody in that room mogged you.'];
+    if(s >= 2500) return ['HIGH MOG', 'Aura levels dangerously stable.'];
+    if(s >= 1400) return ['GRINDSET', 'Solid run. The cringe still clipped you.'];
+    if(s >= 600)  return ['MID', 'You collected. You also collected damage.'];
+    if(s >= 200)  return ['NPC ENERGY', 'Respawn and try holding a combo.'];
+    return ['CRINGE ARC', 'That was a speedrun to zero.'];
+  }
+
+  /* ---------- spawning ---------- */
+  function spawn(){
+    const d = diff();
+    const roll = Math.random();
+    const spikeOdds = elapsed < 4 ? 0 : lerp(.24, .44, d);   // a short warm-up before the cringe starts
+    const coreOdds = .05;
+    const type = roll < coreOdds ? 'core' : roll < coreOdds + spikeOdds ? 'spike' : 'orb';
+    const r = type === 'core' ? 13 : type === 'spike' ? 15 : 12;
+    items.push({
+      type, r,
+      x: rand(r + 6, W - r - 6),
+      y: -r - 4,
+      vy: lerp(150, 340, d) * rand(.85, 1.2),
+      drift: rand(-26, 26),
+      spin: rand(0, Math.PI * 2),
+      spinV: rand(-2.4, 2.4)
+    });
+  }
+
+  function burst(x, y, color, n){
+    if(calm()) return;
+    for(let i = 0; i < n; i++){
+      const a = rand(0, Math.PI * 2), sp = rand(50, 230);
+      bits.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(.3, .7), t: 0, color, r: rand(1.5, 3.5) });
+    }
+  }
+  function say(x, y, txt, color){
+    texts.push({ x, y, txt, color, t: 0, life: .9 });
+  }
+
+  /* ---------- update ---------- */
+  function update(dt){
+    elapsed += dt;
+    gridY = (gridY + lerp(40, 120, diff()) * dt) % 40;
+    if(invuln > 0) invuln -= dt;
+    if(shake > 0) shake = Math.max(0, shake - dt * 3);
+
+    // player
+    const maxv = 460;
+    if(pointerX !== null){
+      player.vx = clamp((pointerX - player.x) * 11, -maxv * 1.4, maxv * 1.4);
+    }else{
+      const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      if(dir) player.vx = clamp(player.vx + dir * 2600 * dt, -maxv, maxv);
+      else player.vx *= Math.pow(.0016, dt);
+    }
+    player.x = clamp(player.x + player.vx * dt, player.r, W - player.r);
+
+    // items
+    spawnT -= dt;
+    if(spawnT <= 0){
+      spawn();
+      spawnT = lerp(.60, .24, diff()) * rand(.8, 1.2);
+    }
+
+    for(let i = items.length - 1; i >= 0; i--){
+      const it = items[i];
+      it.y += it.vy * dt;
+      it.x = clamp(it.x + it.drift * dt, it.r, W - it.r);
+      it.spin += it.spinV * dt;
+
+      const dx = it.x - player.x, dy = it.y - player.y;
+      const hit = dx * dx + dy * dy < (it.r + player.r) * (it.r + player.r);
+
+      if(hit){
+        items.splice(i, 1);
+        if(it.type === 'orb'){
+          combo++;
+          bestCombo = Math.max(bestCombo, combo);
+          const gain = 10 * mult();
+          score += gain;
+          burst(it.x, it.y, '#7cf6c8', 10);
+          say(it.x, it.y, '+' + gain, '#7cf6c8');
+        }else if(it.type === 'core'){
+          combo++;
+          bestCombo = Math.max(bestCombo, combo);
+          const gain = 100 * mult();
+          score += gain;
+          shield = true;
+          burst(it.x, it.y, '#ffd166', 22);
+          say(it.x, it.y, '+' + gain + ' SHIELD', '#ffd166');
+        }else if(invuln <= 0){
+          if(shield){
+            shield = false;
+            burst(it.x, it.y, '#ffd166', 18);
+            say(player.x, player.y - 30, 'BLOCKED', '#ffd166');
+            invuln = .6;
+          }else{
+            lives--;
+            combo = 0;
+            invuln = 1.5;
+            shake = calm() ? 0 : 1;
+            burst(it.x, it.y, '#ff6b8a', 20);
+            say(player.x, player.y - 30, lives > 0 ? 'HIT' : 'MOGGED', '#ff6b8a');
+            if(lives <= 0){ gameOver(); return; }
+          }
+        }
+        continue;
+      }
+
+      if(it.y - it.r > H){
+        items.splice(i, 1);
+        if(it.type === 'orb' && combo > 0){
+          combo = Math.floor(combo / 2);
+          say(it.x, H - 30, combo ? 'COMBO HALVED' : 'COMBO LOST', '#8b90b5');
+        }
+      }
+    }
+
+    for(let i = bits.length - 1; i >= 0; i--){
+      const b = bits[i];
+      b.t += dt;
+      if(b.t >= b.life){ bits.splice(i, 1); continue; }
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      b.vy += 340 * dt; b.vx *= .98;
+    }
+    for(let i = texts.length - 1; i >= 0; i--){
+      const t = texts[i];
+      t.t += dt;
+      if(t.t >= t.life){ texts.splice(i, 1); continue; }
+      t.y -= 34 * dt;
+    }
+  }
+
+  /* ---------- draw ---------- */
+  function fitCanvas(){
+    const rect = cvs.getBoundingClientRect();
+    if(!rect.width) return;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(rect.width * dpr), h = Math.round(rect.height * dpr);
+    if(cvs.width !== w || cvs.height !== h){ cvs.width = w; cvs.height = h; }
+  }
+
+  function drawBackground(){
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#14162a');
+    g.addColorStop(1, '#0a0b14');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(139,124,255,.10)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let y = (calm() ? 0 : gridY) - 40; y < H + 40; y += 40){
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    for(let x = 0; x <= W; x += 40){ ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    ctx.stroke();
+
+    // danger floor: where an orb is lost
+    ctx.strokeStyle = 'rgba(139,144,181,.25)';
+    ctx.setLineDash([6, 8]);
+    ctx.beginPath(); ctx.moveTo(0, H - 14); ctx.lineTo(W, H - 14); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawPlayer(){
+    if(invuln > 0 && !calm() && Math.floor(invuln * 14) % 2 === 0) return;
+    const r = player.r;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(clamp(player.vx / 1400, -.35, .35));
+
+    if(!calm()){
+      ctx.shadowColor = 'rgba(124,246,200,.55)';
+      ctx.shadowBlur = 18;
+    }
+    const g = ctx.createLinearGradient(0, -r, 0, r);
+    g.addColorStop(0, '#7cf6c8');
+    g.addColorStop(1, '#8b7cff');
+    ctx.fillStyle = g;
+    ctx.globalAlpha = invuln > 0 ? .6 : 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.3);
+    ctx.lineTo(r, r * .9);
+    ctx.lineTo(0, r * .45);
+    ctx.lineTo(-r, r * .9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    if(shield){
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, r + 9, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawItem(it){
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.spin);
+    if(!calm()) ctx.shadowBlur = 14;
+
+    if(it.type === 'orb'){
+      ctx.shadowColor = 'rgba(124,246,200,.6)';
+      const g = ctx.createRadialGradient(0, 0, 1, 0, 0, it.r);
+      g.addColorStop(0, '#dffff4');
+      g.addColorStop(1, '#4fd8ad');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
+    }else if(it.type === 'core'){
+      ctx.shadowColor = 'rgba(255,209,102,.7)';
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.moveTo(0, -it.r); ctx.lineTo(it.r, 0); ctx.lineTo(0, it.r); ctx.lineTo(-it.r, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#7a5a10';
+      ctx.beginPath(); ctx.arc(0, 0, it.r * .3, 0, Math.PI * 2); ctx.fill();
+    }else{
+      ctx.shadowColor = 'rgba(255,107,138,.6)';
+      ctx.fillStyle = '#ff6b8a';
+      ctx.beginPath();
+      for(let i = 0; i < 12; i++){
+        const a = i / 12 * Math.PI * 2;
+        const rr = i % 2 ? it.r * .42 : it.r;
+        ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#2a0c16';
+      ctx.beginPath(); ctx.arc(0, 0, it.r * .3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function draw(){
+    fitCanvas();
+    const sx = cvs.width / W, sy = cvs.height / H;
+    let ox = 0, oy = 0;
+    if(shake > 0 && !calm()){
+      ox = rand(-1, 1) * 7 * shake;
+      oy = rand(-1, 1) * 7 * shake;
+    }
+    ctx.setTransform(sx, 0, 0, sy, ox * sx, oy * sy);
+    ctx.clearRect(-20, -20, W + 40, H + 40);
+    drawBackground();
+
+    for(const it of items) drawItem(it);
+
+    for(const b of bits){
+      ctx.globalAlpha = 1 - b.t / b.life;
+      ctx.fillStyle = b.color;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    drawPlayer();
+
+    ctx.textAlign = 'center';
+    ctx.font = '700 15px "Chakra Petch", sans-serif';
+    for(const t of texts){
+      ctx.globalAlpha = 1 - t.t / t.life;
+      ctx.fillStyle = t.color;
+      ctx.fillText(t.txt, clamp(t.x, 40, W - 40), t.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- hud + overlay ---------- */
+  function hud(){
+    elScore.textContent = score;
+    elBest.textContent = Math.max(best, score);
+    elLevel.textContent = level();
+    elLives.textContent = lives > 0 ? '◆'.repeat(lives) : '—';
+    elLives.classList.toggle('safe', lives >= 2);
+    const step = combo % 5;
+    elFill.style.width = (mult() >= 8 ? 100 : step / 5 * 100) + '%';
+    elCombo.textContent = 'combo ' + combo;
+    elMult.textContent = '×' + mult();
+  }
+
+  function render(){
+    overlay.classList.remove('hidden');
+    if(state === 'ready'){
+      overlay.innerHTML =
+        '<h2>SIGMA RUSH</h2>' +
+        '<p>Catch every aura orb. Touch one spike and you lose a life. Let an orb hit the floor and your combo is cut in half.</p>' +
+        '<div class="legend">' +
+          '<span><i style="background:#4fd8ad"></i>aura +10</span>' +
+          '<span><i style="background:#ffd166"></i>core +100 &amp; shield</span>' +
+          '<span><i style="background:#ff6b8a"></i>cringe &minus;1 life</span>' +
+        '</div>' +
+        '<button class="primary" data-act="start">Start</button>';
+    }else if(state === 'pause'){
+      overlay.innerHTML =
+        '<h2>PAUSED</h2>' +
+        '<p>Score ' + score + ' &middot; combo ' + combo + '</p>' +
+        '<button class="primary" data-act="resume">Resume</button>';
+    }else if(state === 'over'){
+      const [rank, flavor] = rankOf(score);
+      overlay.innerHTML =
+        '<h2>GAME OVER</h2>' +
+        '<div class="big">' + score + '</div>' +
+        '<div class="rank">' + rank + '</div>' +
+        '<p>' + flavor + '</p>' +
+        '<p>best combo ' + bestCombo + ' (&times;' + Math.min(8, 1 + Math.floor(bestCombo / 5)) +
+          ') &middot; session best ' + best + '</p>' +
+        '<button class="primary" data-act="start">Play again</button>';
+    }
+  }
+
+  /* ---------- loop ---------- */
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min((now - last) / 1000, .05);
+    last = now;
+    if(state === 'play') update(dt);
+    draw();
+    hud();
+    requestAnimationFrame(frame);
+  }
+
+  render();
+  hud();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
