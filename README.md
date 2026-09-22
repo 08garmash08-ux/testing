@@ -49,19 +49,32 @@ Your best score of the session is kept in `localStorage`.
 
 ## Scratch Cat wave
 
-`scratch-cat.html` is a second, separate page: the Scratch Cat waving, next to the Scratch script that
-makes it wave.
+![the cat waving](scratch/wave-preview.gif)
+
+`scratch/scratch-cat-wave.sb3` is a real Scratch project. Open it at
+[scratch.mit.edu](https://scratch.mit.edu/projects/editor/) with **File -> Load from your computer**,
+or in Scratch Desktop, then press the green flag.
+
+Inside it:
+
+- The **official Scratch Cat**: the sprite carries the editor's own `costume1` and `costume2`, its `Meow`
+  sound, and the blank backdrop with the `pop` sound — the real asset files, under their Scratch asset
+  names (the md5 of each file), taken from the Scratch editor's default project.
+- Two extra costumes, `wave-down` and `wave-up`: the same official artwork with the cat's own arm path
+  turned about its shoulder, the way you would rotate it in the paint editor.
+- The script: `when green flag clicked -> say [Hi!] for 1 second -> forever [switch to wave-up, wait 0.2,
+  switch to wave-down, wait 0.2]`. Two costumes and a wait, which is all a wave is. Click the cat to meow.
+
+`python3 scratch/make-sb3.py` rebuilds the `.sb3` from `scratch/assets/` (the official files) — edit the
+angles in `WAVE_POSES` to change how high the paw goes.
+
+### The same thing in a browser
+
+`scratch-cat.html` is a side page, not a Scratch project: the wave next to the blocks that make it, with a
+slider on the `wait` value so you can see what the timing does. Its cat is hand-drawn SVG, so the page needs
+nothing from the network.
 
 ```bash
 python3 -m http.server 8000
 # then open http://localhost:8000/scratch-cat.html
 ```
-
-- The green flag starts the loop, the stop sign freezes the cat mid-costume (same as Scratch), and clicking
-  the stage toggles it.
-- **costume swap** is how it is really done in Scratch: two drawings, `next costume` inside `forever`, and a
-  `wait` between them. **smooth turn** is the alternative, where the arm is its own sprite turning a couple of
-  degrees at a time — both scripts are on the page.
-- The frame slider is wired to the blocks: the number you drag is the number shown in the `wait` block.
-- The cat is hand-drawn SVG, not the official Scratch costume, so nothing is downloaded and the page works
-  offline.
