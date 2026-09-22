@@ -46,3 +46,22 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+## Scratch Cat wave
+
+`scratch-cat.html` is a second, separate page: the Scratch Cat waving, next to the Scratch script that
+makes it wave.
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/scratch-cat.html
+```
+
+- The green flag starts the loop, the stop sign freezes the cat mid-costume (same as Scratch), and clicking
+  the stage toggles it.
+- **costume swap** is how it is really done in Scratch: two drawings, `next costume` inside `forever`, and a
+  `wait` between them. **smooth turn** is the alternative, where the arm is its own sprite turning a couple of
+  degrees at a time — both scripts are on the page.
+- The frame slider is wired to the blocks: the number you drag is the number shown in the `wait` block.
+- The cat is hand-drawn SVG, not the official Scratch costume, so nothing is downloaded and the page works
+  offline.

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scratch Cat Wave</title>
+<style>
+  :root{
+    --blue:#4C97FF;      /* motion  */
+    --looks:#9966FF;     /* looks   */
+    --control:#FFAB19;   /* control */
+    --events:#FFBF00;    /* events  */
+    --txt:#575E75;
+    --dim:#7C87A3;
+    --line:#D9E3F2;
+    --panel:#FFFFFF;
+    --code-bg:#F2F5FA;
+    --bg:#E9EFF7;
+    --beat:.2s;          /* one costume frame */
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--txt);
+    font:15px/1.55 "Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+    min-height:100vh;
+  }
+  header{
+    background:var(--blue);color:#fff;padding:14px 18px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.01em}
+  header .tag{
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    background:rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 16px 56px}
+
+  .grid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1.05fr);gap:18px;align-items:start}
+  @media (max-width:880px){
+    .grid{grid-template-columns:1fr}
+    .stage-col{order:-1}
+  }
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .card h2{
+    margin:0 0 12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  }
+
+  /* ---------- stage ---------- */
+  .stage{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    aspect-ratio:4/3;overflow:hidden;position:relative;cursor:pointer;
+    background-image:radial-gradient(900px 300px at 50% 120%, #EAF3FF 0%, #fff 60%);
+  }
+  .cat-svg{width:100%;height:100%;display:block;padding:10px 10px 16px}
+  .hint{
+    position:absolute;left:10px;top:10px;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+    background:rgba(255,255,255,.86);border:1px solid var(--line);
+    border-radius:999px;padding:3px 12px;pointer-events:none;
+  }
+  .bar{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .icon-btn{
+    font:inherit;font-size:20px;line-height:1;cursor:pointer;
+    width:42px;height:42px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;transition:.15s;display:grid;place-items:center;
+  }
+  .icon-btn:hover{border-color:var(--blue);transform:translateY(-1px)}
+  .icon-btn.flag{color:#4CBF56}
+  .icon-btn.stop{color:#EC5959}
+  #app.running .icon-btn.flag{background:#EAF9EC;border-color:#4CBF56}
+
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-left:auto}
+  .seg button{
+    font:inherit;font-size:12px;font-weight:700;cursor:pointer;border:0;background:#fff;color:var(--dim);
+    padding:10px 14px;transition:.15s;
+  }
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+
+  .speed{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--dim)}
+  .speed input{flex:1;accent-color:var(--blue)}
+  .speed b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  /* ---------- costume strip ---------- */
+  .costumes{display:flex;gap:10px;margin-top:14px}
+  .costume{
+    flex:1;border:2px solid var(--line);border-radius:10px;background:#fff;
+    padding:6px;text-align:center;
+  }
+  .costume .thumb-svg{width:100%;height:78px;display:block}
+  .costume span{font-size:11px;color:var(--dim);letter-spacing:.06em}
+  #app[data-mode="smooth"] .costume.a{border-color:var(--blue);background:#EEF5FF}
+
+  /* ---------- scratch blocks ---------- */
+  .script{padding:6px;border-radius:10px}
+  #app.running .script{box-shadow:0 0 0 3px var(--events)}
+  #app[data-mode="swap"] #scriptSmooth,
+  #app[data-mode="smooth"] #scriptSwap{display:none}
+
+  .block{
+    display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+    color:#fff;font-size:13px;font-weight:700;
+    padding:9px 12px;border-radius:6px;margin:3px 0;
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,.16);
+  }
+  .events{background:var(--events)}
+  .looks{background:var(--looks)}
+  .motion{background:var(--blue)}
+  .control{background:var(--control)}
+  .hat{border-radius:16px 16px 6px 6px;padding-top:13px}
+  .field{
+    background:#fff;color:var(--txt);border-radius:999px;padding:2px 10px;
+    font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
+  }
+  .field.pick{background:rgba(0,0,0,.16);color:#fff}
+  .cblock{border-radius:6px;margin:3px 0;padding-bottom:0}
+  .cblock > .block{margin:0;border-radius:6px 6px 0 0;box-shadow:none}
+  .cinner{margin-left:16px;background:var(--code-bg);padding:4px 0 4px 6px;border-radius:0 6px 6px 0}
+  .cfoot{height:16px;border-radius:0 0 6px 6px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.16);
+         display:flex;align-items:center;padding:0 10px;color:rgba(0,0,0,.35);font-size:12px}
+  .cblock.control > .block, .cblock.control > .cfoot{background:var(--control)}
+  .caption{font-size:12px;color:var(--dim);margin:2px 0 10px}
+
+  /* ---------- notes ---------- */
+  .notes{margin-top:18px}
+  .notes ul{margin:0;padding-left:20px}
+  .notes li{margin:8px 0}
+  .notes b{color:var(--txt)}
+  code{background:var(--code-bg);border-radius:5px;padding:1px 6px;font-size:13px}
+  footer{margin-top:24px;text-align:center;font-size:12px;color:var(--dim)}
+  footer a{color:var(--blue)}
+
+  /* ---------- the wave ---------- */
+  .anim{animation-play-state:paused}
+  #app.running .anim{animation-play-state:running}
+  #app.reset .anim{animation:none!important}
+
+  .arm{transform-box:view-box;transform-origin:125px 228px}
+  .head{transform-box:view-box;transform-origin:200px 216px}
+  .tail{transform-box:view-box;transform-origin:252px 286px}
+  .eyes{transform-box:view-box;transform-origin:200px 140px}
+  .bubble{opacity:0;transition:opacity .18s;transform-box:view-box;transform-origin:300px 84px}
+  #app.running .bubble{opacity:1;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
+
+  /* costume swap: two poses, no in-between — this is what Scratch actually does */
+  #app[data-mode="swap"] .arm {animation:swapArm  calc(var(--beat)*2) steps(1,end) infinite}
+  #app[data-mode="swap"] .head{animation:swapHead calc(var(--beat)*2) steps(1,end) infinite}
+  @keyframes swapArm {0%,49.99%{transform:rotate(-22deg)} 50%,100%{transform:rotate(4deg)}}
+  @keyframes swapHead{0%,49.99%{transform:rotate(-2deg)}  50%,100%{transform:rotate(2deg)}}
+
+  /* smooth: the arm as its own sprite, turning a few degrees per frame */
+  #app[data-mode="smooth"] .arm {animation:smoothArm  calc(var(--beat)*2) ease-in-out infinite}
+  #app[data-mode="smooth"] .head{animation:smoothHead calc(var(--beat)*2) ease-in-out infinite}
+  @keyframes smoothArm {0%,100%{transform:rotate(-22deg)} 50%{transform:rotate(4deg)}}
+  @keyframes smoothHead{0%,100%{transform:rotate(-2deg)}  50%{transform:rotate(2deg)}}
+
+  .bob {animation:bob 1.1s ease-in-out infinite}
+  .tail{animation:sway 1.6s ease-in-out infinite}
+  .eyes{animation:blink 4.4s steps(1,end) infinite}
+  @keyframes bob  {0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)}}
+  @keyframes sway {0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(6deg)}}
+  @keyframes blink{0%,95%{transform:scaleY(1)} 96%,98%{transform:scaleY(.08)} 99%,100%{transform:scaleY(1)}}
+  @keyframes pop  {from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1}}
+
+  /* the wave itself is the point of the page, so it survives; the extras stop */
+  @media (prefers-reduced-motion:reduce){
+    .bob,.tail,.eyes{animation:none!important}
+    #app.running .bubble{animation:none}
+  }
+
+  /* costume strip follows the beat, like the selected costume in the editor */
+  #app.running[data-mode="swap"] .costume.a{animation:sel calc(var(--beat)*2) steps(1,end) infinite}
+  #app.running[data-mode="swap"] .costume.b{animation:sel calc(var(--beat)*2) steps(1,end) infinite;
+                                            animation-delay:calc(var(--beat)*-1)}
+  @keyframes sel{0%,49.99%{border-color:var(--blue);background:#EEF5FF} 50%,100%{border-color:var(--line);background:#fff}}
+</style>
+</head>
+<body>
+<div id="app" data-mode="swap">
+
+<header>
+  <h1>Scratch Cat &mdash; waving animation</h1>
+  <span class="tag">two costumes &middot; one loop</span>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <!-- ---------------- blocks ---------------- -->
+    <section class="card">
+      <h2>Script</h2>
+
+      <div class="script on" id="scriptSwap">
+        <div class="block events hat">when <span class="field pick">&#9873;</span> clicked</div>
+        <div class="block looks">switch costume to <span class="field pick">wave-down &#9662;</span></div>
+        <div class="block looks">say <span class="field">Hi!</span></div>
+        <div class="cblock control">
+          <div class="block control">forever</div>
+          <div class="cinner">
+            <div class="block looks">next costume</div>
+            <div class="block control">wait <span class="field" data-beat>0.2</span> seconds</div>
+          </div>
+          <div class="cfoot">&#8635;</div>
+        </div>
+      </div>
+
+      <div class="script" id="scriptSmooth">
+        <p class="caption">On a separate <b>arm</b> sprite, rotation centre set to the shoulder:</p>
+        <div class="block events hat">when <span class="field pick">&#9873;</span> clicked</div>
+        <div class="block motion">point in direction <span class="field">-22</span></div>
+        <div class="cblock control">
+          <div class="block control">forever</div>
+          <div class="cinner">
+            <div class="cblock control">
+              <div class="block control">repeat <span class="field">13</span></div>
+              <div class="cinner">
+                <div class="block motion">turn &#8635; <span class="field">2</span> degrees</div>
+                <div class="block control">wait <span class="field" data-frame>0.013</span> seconds</div>
+              </div>
+              <div class="cfoot"></div>
+            </div>
+            <div class="cblock control">
+              <div class="block control">repeat <span class="field">13</span></div>
+              <div class="cinner">
+                <div class="block motion">turn &#8634; <span class="field">2</span> degrees</div>
+                <div class="block control">wait <span class="field" data-frame>0.013</span> seconds</div>
+              </div>
+              <div class="cfoot"></div>
+            </div>
+          </div>
+          <div class="cfoot">&#8635;</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- stage ---------------- -->
+    <section class="card stage-col">
+      <h2>Stage</h2>
+
+      <div class="stage" id="stage">
+        <svg class="cat-svg" id="catSvg" viewBox="0 0 400 360" role="img"
+             aria-label="The Scratch Cat waving one paw">
+          <ellipse cx="200" cy="344" rx="118" ry="13" fill="#000" opacity=".09"/>
+
+          <g class="bob anim">
+            <!-- tail -->
+            <g class="tail anim">
+              <path d="M252 286 C 322 300 376 256 356 196" fill="none" stroke="#CF8B17" stroke-width="27" stroke-linecap="round"/>
+              <path d="M252 286 C 322 300 376 256 356 196" fill="none" stroke="#FFAB19" stroke-width="16" stroke-linecap="round"/>
+            </g>
+
+            <!-- feet -->
+            <ellipse cx="155" cy="322" rx="42" ry="20" fill="#FFAB19" stroke="#CF8B17" stroke-width="6"/>
+            <ellipse cx="247" cy="322" rx="42" ry="20" fill="#FFAB19" stroke="#CF8B17" stroke-width="6"/>
+
+            <!-- body -->
+            <ellipse cx="200" cy="252" rx="92" ry="70" fill="#FFAB19" stroke="#CF8B17" stroke-width="6"/>
+            <ellipse cx="200" cy="272" rx="56" ry="42" fill="#FFC44D"/>
+
+            <!-- resting arm -->
+            <path d="M276 236 C 296 258 302 276 300 288" fill="none" stroke="#CF8B17" stroke-width="26" stroke-linecap="round"/>
+            <path d="M276 236 C 296 258 302 276 300 288" fill="none" stroke="#FFAB19" stroke-width="16" stroke-linecap="round"/>
+            <ellipse cx="301" cy="294" rx="23" ry="18" fill="#FFAB19" stroke="#CF8B17" stroke-width="6"/>
+
+            <!-- head -->
+            <g class="head anim">
+              <path d="M128 112 L116 52 L176 84 Z" fill="#FFAB19" stroke="#CF8B17" stroke-width="8" stroke-linejoin="round"/>
+              <path d="M272 112 L284 52 L224 84 Z" fill="#FFAB19" stroke="#CF8B17" stroke-width="8" stroke-linejoin="round"/>
+              <ellipse cx="200" cy="150" rx="104" ry="80" fill="#FFAB19" stroke="#CF8B17" stroke-width="6"/>
+
+              <g class="eyes anim">
+                <ellipse cx="166" cy="140" rx="24" ry="27" fill="#fff" stroke="#CF8B17" stroke-width="3"/>
+                <ellipse cx="234" cy="140" rx="24" ry="27" fill="#fff" stroke="#CF8B17" stroke-width="3"/>
+                <ellipse cx="169" cy="145" rx="9" ry="13" fill="#2B2B2B"/>
+                <ellipse cx="237" cy="145" rx="9" ry="13" fill="#2B2B2B"/>
+                <circle cx="164" cy="137" r="3.6" fill="#fff" opacity=".92"/>
+                <circle cx="232" cy="137" r="3.6" fill="#fff" opacity=".92"/>
+              </g>
+
+              <path d="M186 172 q14 -9 28 0 q-6 15 -14 15 q-8 0 -14 -15 z" fill="#7E4B10"/>
+              <path d="M200 187 q-16 18 -30 3" fill="none" stroke="#7E4B10" stroke-width="5" stroke-linecap="round"/>
+              <path d="M200 187 q16 18 30 3"  fill="none" stroke="#7E4B10" stroke-width="5" stroke-linecap="round"/>
+
+              <g stroke="#CF8B17" stroke-width="4.5" stroke-linecap="round">
+                <path d="M148 168 L92 152"/><path d="M146 180 L86 178"/><path d="M148 192 L94 204"/>
+                <path d="M252 168 L308 152"/><path d="M254 180 L314 178"/><path d="M252 192 L306 204"/>
+              </g>
+            </g>
+
+            <!-- waving arm: drawn last so the paw passes in front of the whiskers -->
+            <g class="arm anim">
+              <path d="M125 228 C 104 200 88 172 74 144" fill="none" stroke="#CF8B17" stroke-width="27" stroke-linecap="round"/>
+              <path d="M125 228 C 104 200 88 172 74 144" fill="none" stroke="#FFAB19" stroke-width="16" stroke-linecap="round"/>
+              <ellipse cx="68" cy="134" rx="24" ry="20" fill="#FFAB19" stroke="#CF8B17" stroke-width="6" transform="rotate(-24 68 134)"/>
+              <g stroke="#CF8B17" stroke-width="3.5" stroke-linecap="round">
+                <path d="M56 122 L52 130"/><path d="M66 117 L62 126"/>
+              </g>
+            </g>
+
+            <!-- say bubble -->
+            <g class="bubble">
+              <path d="M300 84 L286 106 L272 90 Z" fill="#fff" stroke="#E0E6F2" stroke-width="3" stroke-linejoin="round"/>
+              <rect x="284" y="16" width="108" height="70" rx="20" fill="#fff" stroke="#E0E6F2" stroke-width="3"/>
+              <text x="338" y="63" text-anchor="middle" font-family="Helvetica Neue,Helvetica,Arial,sans-serif"
+                    font-size="36" font-weight="700" fill="#575E75">Hi!</text>
+            </g>
+          </g>
+        </svg>
+        <div class="hint" id="hint">click the stage to wave</div>
+      </div>
+
+      <div class="bar">
+        <button class="icon-btn flag" id="btnFlag" title="Go" aria-label="Go">&#9873;</button>
+        <button class="icon-btn stop" id="btnStop" title="Stop" aria-label="Stop">&#9632;</button>
+        <div class="seg" role="group" aria-label="How the arm moves">
+          <button id="modeSwap" aria-pressed="true">costume swap</button>
+          <button id="modeSmooth" aria-pressed="false">smooth turn</button>
+        </div>
+      </div>
+
+      <div class="speed">
+        <label for="speed">frame</label>
+        <input id="speed" type="range" min="0.06" max="0.5" step="0.02" value="0.2">
+        <b id="speedOut">0.20 s</b>
+      </div>
+
+      <div class="costumes" id="costumes"></div>
+    </section>
+  </div>
+
+  <section class="card notes">
+    <h2>How the wave is made</h2>
+    <ul>
+      <li><b>Two costumes, nothing else.</b> The cat has one drawing with the paw out (<code>wave-down</code>)
+        and one with it up (<code>wave-up</code>). <code>next costume</code> inside a <code>forever</code>
+        loop flips between them; your eye fills in the movement that was never drawn.</li>
+      <li><b>The wait is the animation.</b> <code>wait 0.2 seconds</code> is about five flips a second.
+        Drag the slider: past <b>0.3&nbsp;s</b> the cat looks like it is signalling, under <b>0.1&nbsp;s</b> the
+        two poses smear into one blurry paw.</li>
+      <li><b>Scratch cannot rotate half a sprite.</b> For the smooth version the arm has to be its own sprite,
+        with its rotation centre dragged onto the shoulder, turned a couple of degrees per frame &mdash;
+        that is the second script.</li>
+      <li><b>The rest is secondary motion.</b> Body bob, tail sway and a blink every few seconds run on their
+        own timings. None of it is the wave, all of it is why the wave reads as a cat.</li>
+    </ul>
+    <p class="caption">Reduced motion is honoured: nothing starts on its own, and the bob, tail and blink stay
+      still even while the paw waves.</p>
+  </section>
+
+  <footer>Also here: <a href="index.html">Mog Your Face</a></footer>
+</div>
+</div>
+
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const stage = document.getElementById('stage');
+  const hint = document.getElementById('hint');
+  const speed = document.getElementById('speed');
+  const speedOut = document.getElementById('speedOut');
+  const catSvg = document.getElementById('catSvg');
+  const calm = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* ---------- costume strip: the same cat frozen in each pose ---------- */
+  const poses = [['a', -22, 'wave-down'], ['b', 4, 'wave-up']];
+  const strip = document.getElementById('costumes');
+  poses.forEach(([key, deg, name], i) => {
+    const clone = catSvg.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.removeAttribute('role');
+    clone.removeAttribute('aria-label');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.setAttribute('class', 'thumb-svg');
+    clone.querySelector('.bubble').remove();
+    clone.querySelector('.arm').style.transform = `rotate(${deg}deg)`;
+    clone.querySelector('.head').style.transform = `rotate(${deg * 0.09}deg)`;
+    const card = document.createElement('div');
+    card.className = 'costume ' + key;
+    card.append(clone, Object.assign(document.createElement('span'), {textContent: `${i + 1} · ${name}`}));
+    strip.append(card);
+  });
+
+  /* ---------- run / stop ---------- */
+  function start(){
+    app.classList.add('reset');        // drop the animations...
+    void app.offsetWidth;              // ...let the layout settle...
+    app.classList.remove('reset');     // ...so every one of them starts at frame 1
+    app.classList.add('running');
+    hint.textContent = 'click the stage to stop';
+  }
+  function stop(){
+    app.classList.remove('running');   // paused, so the cat freezes mid-costume, like Scratch
+    hint.textContent = 'click the stage to wave';
+  }
+  const toggle = () => app.classList.contains('running') ? stop() : start();
+
+  document.getElementById('btnFlag').onclick = start;
+  document.getElementById('btnStop').onclick = stop;
+  stage.onclick = toggle;
+
+  /* ---------- mode ---------- */
+  const bSwap = document.getElementById('modeSwap'), bSmooth = document.getElementById('modeSmooth');
+  function setMode(mode){
+    app.dataset.mode = mode;
+    bSwap.setAttribute('aria-pressed', mode === 'swap');
+    bSmooth.setAttribute('aria-pressed', mode === 'smooth');
+    if (app.classList.contains('running')) start();
+  }
+  bSwap.onclick = () => setMode('swap');
+  bSmooth.onclick = () => setMode('smooth');
+
+  /* ---------- the number in the block is the number on screen ---------- */
+  function setBeat(sec){
+    app.style.setProperty('--beat', sec + 's');
+    speedOut.textContent = sec.toFixed(2) + ' s';
+    document.querySelectorAll('[data-beat]').forEach(n => n.textContent = sec.toFixed(2));
+    document.querySelectorAll('[data-frame]').forEach(n => n.textContent = (sec / 13).toFixed(3));
+  }
+  speed.oninput = () => setBeat(parseFloat(speed.value));
+  setBeat(parseFloat(speed.value));
+
+  if (!calm.matches) start();
+})();
+</script>
+</body>
+</html>
