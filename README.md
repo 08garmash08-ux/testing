@@ -47,26 +47,67 @@ The six traits are weighted into one mog rating. Same photo, same score — so a
 
 Your best score of the session is kept in `localStorage`.
 
-## Scratch Cat wave
+## Scratch Cat wave party
 
-![the cat waving](scratch/wave-preview.gif)
+![the project running](scratch/project-preview.gif)
 
 `scratch/scratch-cat-wave.sb3` is a real Scratch project. Open it at
 [scratch.mit.edu](https://scratch.mit.edu/projects/editor/) with **File -> Load from your computer**,
 or in Scratch Desktop, then press the green flag.
 
-Inside it:
+| | |
+|---|---|
+| green flag | the cat waves, forever, counting its waves |
+| click the cat | meow, a pop of size, a burst of sparkles |
+| space | a jump with a double spin |
+| **P** | eight seconds of party: rave backdrop, hue cycling, the cat dances |
+| **B** | next backdrop |
+| hold the mouse | drag the cat around; it draws a rainbow behind it |
+| **C** | wipe the drawing |
 
-- The **official Scratch Cat**: the sprite carries the editor's own `costume1` and `costume2`, its `Meow`
-  sound, and the blank backdrop with the `pop` sound — the real asset files, under their Scratch asset
-  names (the md5 of each file), taken from the Scratch editor's default project.
-- Two extra costumes, `wave-down` and `wave-up`: the same official artwork with the cat's own arm path
-  turned about its shoulder, the way you would rotate it in the paint editor.
-- The script: `when green flag clicked -> say [Hi!] for 1 second -> forever [switch to wave-up, wait 0.2,
-  switch to wave-down, wait 0.2]`. Two costumes and a wait, which is all a wave is. Click the cat to meow.
+### What is in it
 
-`python3 scratch/make-sb3.py` rebuilds the `.sb3` from `scratch/assets/` (the official files) — edit the
-angles in `WAVE_POSES` to change how high the paw goes.
+- The **official Scratch Cat**: `costume1`, `costume2`, its `Meow` sound, the blank backdrop and the `pop`
+  sound are the Scratch editor's own asset files, carried under their Scratch asset names (the md5 of each
+  file) from the editor's default project.
+- Six more costumes made from that same official artwork by rotating the cat's own arm paths about their
+  shoulders, the way you would in the paint editor: `wave-1` to `wave-5` for the wave, and `cheer` with both
+  paws up for the dance.
+- **The wave is a My Block**: it flips through the five costumes and back, one every 0.05 seconds, then
+  counts a wave and throws a sparkle off the paw. Change the number where it is called to wave faster.
+- A **Sparkle** sprite that exists only as clones — each one flies off the paw, spins, shrinks and fades.
+- Four backdrops (night, sunrise, rave, retro grid) and a rainbow pen trail, both drawn in plain SVG.
+
+### Building it
+
+```bash
+python3 scratch/make-sb3.py
+```
+
+`poses.py` re-poses the cat, `art.py` draws the sparkle and the backdrops, and `blocks.py` is a small
+builder that turns readable Python into the block JSON an `.sb3` wants:
+
+```python
+cat.script(360, 260, [
+    hat("event_whenkeypressed", KEY_OPTION="space"),
+    play("pop"),
+    repeat(12, [change_y(11), turn_cw(30), create_clone("Sparkle")]),
+    repeat(12, [change_y(-11), turn_cw(30)]),
+    point(90),
+])
+```
+
+### Checking it
+
+```bash
+npm install scratch-vm scratch-storage scratch-parser
+node scratch/check-sb3.js
+```
+
+That runs the file through `scratch-parser` — the validator scratch.mit.edu uses on an uploaded project —
+and then plays it in `scratch-vm`, the engine the editor runs on: green flag, click, space, **P**, **B**,
+mouse drag. It checks the wave reaches every costume, the sparkles are thrown, the jump peaks and lands
+facing the same way, the party starts and ends on its own, and that nothing errors.
 
 ### The same thing in a browser
 
