@@ -260,10 +260,12 @@
       <summary>Use a real Google account</summary>
       <div class="body">
         <p class="fineprint" style="margin-top:0">
-          Paste an OAuth <b>Web application</b> client ID from the
-          Google Cloud console and add this page's origin (<code id="origin"></code>) to its
-          authorised JavaScript origins. The button above then becomes real Google Sign-In.
-          Without one it signs you in as a local Google-style profile so you can still play.
+          Paste an OAuth <b>Web application</b> client ID from the Google Cloud console, with
+          this page's origin (<code id="origin"></code>) listed under its authorised JavaScript
+          origins. The button above then becomes Google's own account chooser &mdash; tap, pick an
+          account, done. Saving it here covers this browser only; put the same ID in
+          <code>GOOGLE_CLIENT_ID</code> at the top of the file to cover everyone.
+          Without a client ID the button makes a local Google-style profile instead.
         </p>
         <label class="fld">
           <span>Google client ID</span>
@@ -345,6 +347,12 @@ const K_USERS = "school.users.v1";
 const K_SESS  = "school.session.v1";
 const K_SAVE  = "school.save.v1.";
 const K_GCID  = "school.googleClientId";
+
+// Paste an OAuth "Web application" client ID between the quotes to make the
+// Google button the real account chooser for everyone who opens this page.
+// Client IDs are public values; it is safe to commit one here. The page's
+// origin must be listed under the client's "Authorised JavaScript origins".
+const GOOGLE_CLIENT_ID = "";
 
 function readJSON(store, key, fallback) {
   try { const raw = store.getItem(key); return raw ? JSON.parse(raw) : fallback; }
@@ -580,7 +588,8 @@ $("authForm").addEventListener("submit", async (ev) => {
 function clientId() {
   const q = new URLSearchParams(location.search).get("google_client_id");
   if (q) { try { localStorage.setItem(K_GCID, q.trim()); } catch (_) {} }
-  try { return (localStorage.getItem(K_GCID) || "").trim(); } catch (_) { return ""; }
+  try { return (localStorage.getItem(K_GCID) || GOOGLE_CLIENT_ID).trim(); }
+  catch (_) { return GOOGLE_CLIENT_ID.trim(); }
 }
 
 function googleSignIn(email, name, stay) {
@@ -636,6 +645,14 @@ function mountGoogle() {
       });
       google.accounts.id.renderButton($("gsiHost"), { theme: "filled_black", size: "large", width: 320, text: "continue_with" });
       $("btnGoogle").classList.add("hidden");
+      // If the rendered button never appears, fall back to Google's chooser prompt.
+      setTimeout(() => {
+        if ($("gsiHost").childElementCount) return;
+        $("gNote").textContent = "";
+        $("gNote").classList.add("hidden");
+        $("btnGoogle").classList.remove("hidden");
+        $("btnGoogle").onclick = () => google.accounts.id.prompt();
+      }, 2000);
     } catch (err) {
       showMsg("Google sign-in could not start: " + (err.message || err));
     }

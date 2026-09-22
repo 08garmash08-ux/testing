@@ -67,12 +67,18 @@ SHA-256 implemented in the page and records which scheme it used. Make the passw
 *local profile*: it asks which address to use, ties a save file to it, and sends nothing to Google. An email
 that already has a password on the device cannot be taken over this way.
 
-To use the real thing, open **Use a real Google account** under the button and paste an OAuth *Web
+For the real account chooser — tap the button, pick a Google account, done — the page needs an OAuth *Web
 application* client ID from the Google Cloud console, with the page's origin (for example
-`http://localhost:8000`) in its authorised JavaScript origins. The page then loads Google Identity Services
-and renders Google's own button; the returned ID token's email and name become the profile.
-`?google_client_id=…` in the URL works too. There is no backend, so the token is only read for a display
-name — a real app would verify it server-side.
+`https://your-name.github.io` or `http://localhost:8000`) listed under its authorised JavaScript origins.
+Put it in `GOOGLE_CLIENT_ID` at the top of the script and every visitor gets it; the **Use a real Google
+account** panel and `?google_client_id=…` set it for one browser instead. With an ID present the page loads
+Google Identity Services and renders Google's own button, and the returned ID token's email and name become
+the profile. Client IDs are public values, so committing one is fine. There is no backend, so the token is
+only read for a display name — a real app would verify it server-side.
+
+Google Sign-In will not work from `file://`, and it will not work inside an embedded frame such as a Claude
+artifact: it needs a real origin over `https` (or `http://localhost`) that matches the client's authorised
+origins.
 
 *Stay signed in on this device* keeps the session in `localStorage`; unticked, it lives in `sessionStorage`
 and ends with the tab. Each account gets its own save file, and the login screen shows a local honour roll of
