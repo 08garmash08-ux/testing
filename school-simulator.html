@@ -1,0 +1,1334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Simulator</title>
+<meta name="description" content="A school life simulator: pick your day, sit your exams, survive the year. Sign in with an email and password or with Google.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#07080d;
+    --panel:#11131d;
+    --panel2:#171a28;
+    --line:#232741;
+    --txt:#e8ebff;
+    --dim:#8b90b5;
+    --acc:#7cf6c8;
+    --acc2:#8b7cff;
+    --bad:#ff6b8a;
+    --warn:#ffd166;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 600px at 50% -10%, #1b1740 0%, transparent 60%),
+      var(--bg);
+    color:var(--txt);
+    font:15px/1.55 "IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+  h1{
+    margin:0;text-align:center;font-family:"Chakra Petch","Segoe UI",sans-serif;
+    font-size:clamp(28px,7.5vw,54px);
+    letter-spacing:.14em;font-weight:800;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{text-align:center;color:var(--dim);letter-spacing:.3em;font-size:11px;margin:6px 0 22px;text-transform:uppercase}
+  .hidden{display:none!important}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px}
+  .card + .card{margin-top:16px}
+
+  /* ---------- auth ---------- */
+  .auth{max-width:440px;margin:0 auto}
+  .tabs{display:flex;gap:6px;background:#0d0f18;border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:18px}
+  .tabs button{flex:1;padding:10px 8px;border:0;border-radius:9px;background:transparent;color:var(--dim);
+    font:inherit;font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;font-size:12px;cursor:pointer;transition:.15s}
+  .tabs button[aria-selected="true"]{background:var(--panel2);color:var(--txt);box-shadow:0 0 0 1px var(--line) inset}
+  label.fld{display:block;margin:0 0 13px}
+  label.fld > span{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  input[type=email],input[type=password],input[type=text]{
+    width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--line);
+    background:#0d0f18;color:var(--txt);font:inherit;transition:.15s}
+  input:focus-visible{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(124,246,200,.14)}
+  .pw{position:relative}
+  .pw input{padding-right:64px}
+  .pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:7px 10px;font-size:10px;
+    background:transparent;border:1px solid var(--line);letter-spacing:.12em}
+  .check{display:flex;align-items:center;gap:9px;color:var(--dim);font-size:13px;margin:4px 0 16px;cursor:pointer}
+  .check input{accent-color:var(--acc);width:16px;height:16px}
+  .hint{color:var(--dim);font-size:12px;margin:-8px 0 14px}
+  .msg{border-radius:11px;padding:10px 12px;font-size:13px;margin-bottom:14px;border:1px solid}
+  .msg.err{color:var(--bad);border-color:rgba(255,107,138,.4);background:rgba(255,107,138,.08)}
+  .msg.ok{color:var(--acc);border-color:rgba(124,246,200,.4);background:rgba(124,246,200,.08)}
+
+  button{
+    font:inherit;font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:13px 20px;border-radius:12px;border:1px solid var(--line);
+    background:#181b2b;color:var(--txt);cursor:pointer;transition:.15s;
+  }
+  button:hover:not(:disabled){border-color:var(--acc);transform:translateY(-1px)}
+  button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#080a12;border-color:transparent}
+  button.ghost{background:transparent}
+  button.wide{width:100%}
+  button.sm{padding:9px 14px;font-size:11px}
+
+  .or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:11px;letter-spacing:.24em;
+    text-transform:uppercase;margin:18px 0}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+  .gbtn{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+    background:#fff;color:#1f1f1f;border-color:#fff;text-transform:none;letter-spacing:0;
+    font-family:"IBM Plex Sans","Segoe UI",sans-serif;font-weight:600}
+  .gbtn:hover:not(:disabled){border-color:#fff;filter:brightness(.94)}
+  .gbtn svg{width:18px;height:18px;flex:none}
+  #gsiHost{display:flex;justify-content:center;min-height:0}
+  .gnote{color:var(--dim);font-size:12px;text-align:center;margin:9px 0 0}
+  details.setup{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  details.setup summary{cursor:pointer;color:var(--dim);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  details.setup summary:hover{color:var(--acc)}
+  details.setup .body{margin-top:12px}
+  details.setup code{background:#0d0f18;border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:12px}
+  .fineprint{color:var(--dim);font-size:12px;margin:16px 0 0;line-height:1.5}
+  .board{margin-top:16px}
+  .board h3,.panel h3{font-family:"Chakra Petch","Segoe UI",sans-serif;font-size:12px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);margin:0 0 10px;font-weight:700}
+  .board ol{list-style:none;margin:0;padding:0;counter-reset:rank}
+  .board li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .board li:last-child{border-bottom:0}
+  .board li b{font-variant-numeric:tabular-nums;color:var(--acc)}
+  .board .who{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ---------- game ---------- */
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:12px 14px;margin-bottom:16px;flex-wrap:wrap}
+  .avatar{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;
+    font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;color:#080a12;
+    background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:17px}
+  .who-block{min-width:0;flex:1}
+  .who-block .nm{font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .who-block .em{color:var(--dim);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);
+    border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+  @media (max-width:520px){
+    .who-block{flex:1 0 calc(100% - 52px)}
+    .topbar > button{flex:1}
+  }
+
+  .hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px}
+  .tile .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .tile .v{font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;font-size:21px;
+    font-variant-numeric:tabular-nums;margin-top:2px}
+  .meter{height:6px;border-radius:99px;background:#1c1f31;overflow:hidden;margin-top:7px}
+  .meter i{display:block;height:100%;border-radius:99px;width:0;transition:width .5s cubic-bezier(.2,.8,.2,1);
+    background:linear-gradient(90deg,var(--acc),var(--acc2))}
+  .meter.warn i{background:linear-gradient(90deg,var(--warn),#ff9f6b)}
+  .meter.bad i{background:linear-gradient(90deg,var(--bad),#ff9f6b)}
+
+  .cols{display:grid;grid-template-columns:1fr;gap:16px}
+  @media (min-width:760px){.cols{grid-template-columns:1.35fr .95fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+  .daybar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;margin-bottom:4px}
+  .daybar .when{font-family:"Chakra Petch","Segoe UI",sans-serif;font-size:19px;font-weight:700;letter-spacing:.06em}
+  .daybar .tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--warn)}
+  .prompt{color:var(--dim);margin:0 0 14px;font-size:13px}
+
+  .acts{display:grid;gap:9px}
+  .act{display:block;width:100%;text-align:left;text-transform:none;letter-spacing:0;font-weight:400;
+    font-family:"IBM Plex Sans","Segoe UI",sans-serif;background:var(--panel2);padding:12px 13px;border-radius:13px}
+  .act:hover:not(:disabled){background:#1d2133}
+  .act .t{font-family:"Chakra Petch","Segoe UI",sans-serif;font-weight:700;letter-spacing:.05em;
+    display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .act .t em{font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .act .d{color:var(--dim);font-size:12.5px;margin-top:3px}
+  .act .fx{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:10.5px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:2px 8px;
+    color:var(--dim);font-variant-numeric:tabular-nums}
+  .chip.up{color:var(--acc);border-color:rgba(124,246,200,.35)}
+  .chip.down{color:var(--bad);border-color:rgba(255,107,138,.35)}
+
+  .skills{margin-bottom:16px}
+  .skill{margin:0 0 11px}
+  .skill .top{display:flex;justify-content:space-between;font-size:12.5px}
+  .skill .top b{font-weight:600}
+  .skill .top span{color:var(--dim);font-variant-numeric:tabular-nums}
+  .bar{height:8px;border-radius:99px;background:#1c1f31;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;border-radius:99px;width:0;transition:width .6s cubic-bezier(.2,.8,.2,1);
+    background:linear-gradient(90deg,var(--acc),var(--acc2))}
+
+  .log{margin-top:16px;max-height:260px;overflow:auto}
+  .log ul{list-style:none;margin:0;padding:0}
+  .log li{border-left:2px solid var(--line);padding:4px 0 8px 11px;font-size:13px;color:var(--dim)}
+  .log li b{color:var(--txt);font-weight:600}
+  .log li.good{border-left-color:var(--acc)}
+  .log li.bad{border-left-color:var(--bad)}
+  .log li.big{border-left-color:var(--acc2)}
+
+  /* ---------- modal ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(5,6,11,.78);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;
+    max-width:460px;width:100%;max-height:88vh;overflow:auto}
+  .modal h2{font-family:"Chakra Petch","Segoe UI",sans-serif;margin:0 0 4px;font-size:22px;letter-spacing:.04em}
+  .modal .kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+  .modal p{color:var(--dim);margin:0 0 16px}
+  .modal .acts{margin-top:14px}
+  .grades{margin:0 0 16px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .grades div{display:flex;justify-content:space-between;padding:9px 12px;font-size:13.5px;border-bottom:1px solid var(--line)}
+  .grades div:last-child{border-bottom:0}
+  .grades b{font-family:"Chakra Petch","Segoe UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+  .g-a{color:var(--acc)} .g-b{color:#9ad9ff} .g-c{color:var(--warn)} .g-d{color:#ff9f6b} .g-f{color:var(--bad)}
+  .big-score{text-align:center;margin:0 0 14px}
+  .big-score b{font-family:"Chakra Petch","Segoe UI",sans-serif;font-size:56px;line-height:1;font-weight:700;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .big-score span{display:block;color:var(--dim);font-size:11px;letter-spacing:.24em;text-transform:uppercase;margin-top:4px}
+  .foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SCHOOL SIMULATOR</h1>
+  <div class="sub">study &middot; slack off &middot; survive the year</div>
+
+  <!-- ============ LOGIN ============ -->
+  <section id="authView" class="card auth" aria-labelledby="authHeading">
+    <h2 id="authHeading" class="hidden">Sign in</h2>
+
+    <div class="tabs" role="tablist" aria-label="Sign in or create an account">
+      <button type="button" id="tabIn" role="tab" aria-selected="true" aria-controls="authForm">Sign in</button>
+      <button type="button" id="tabUp" role="tab" aria-selected="false" aria-controls="authForm">Create account</button>
+    </div>
+
+    <div id="authMsg" class="msg err hidden" role="alert"></div>
+
+    <form id="authForm" novalidate>
+      <label class="fld" id="nameFld">
+        <span>School name</span>
+        <input id="fName" type="text" autocomplete="nickname" maxlength="24" placeholder="What the teachers call you">
+      </label>
+
+      <label class="fld">
+        <span>Email address</span>
+        <input id="fEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+      </label>
+
+      <label class="fld">
+        <span>Password</span>
+        <span class="pw">
+          <input id="fPass" type="password" autocomplete="current-password" required placeholder="At least 8 characters">
+          <button type="button" id="btnPeek" class="ghost sm" aria-pressed="false">Show</button>
+        </span>
+      </label>
+
+      <label class="fld" id="pass2Fld">
+        <span>Repeat password</span>
+        <input id="fPass2" type="password" autocomplete="new-password" placeholder="Same again">
+      </label>
+
+      <p class="hint" id="passHint">Made-up passwords only &mdash; this is a game, not an account you need.</p>
+
+      <label class="check"><input id="fStay" type="checkbox" checked> Stay signed in on this device</label>
+
+      <button type="submit" id="btnAuth" class="primary wide">Sign in</button>
+    </form>
+
+    <div class="or">or</div>
+
+    <div id="gsiHost"></div>
+    <button type="button" id="btnGoogle" class="gbtn wide">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.77 24c0-1.59.27-3.14.76-4.59l-7.98-6.19A23.94 23.94 0 0 0 0 24c0 3.88.93 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      <span id="gLabel">Continue with Google</span>
+    </button>
+    <p class="gnote hidden" id="gNote"></p>
+
+    <details class="setup">
+      <summary>Use a real Google account</summary>
+      <div class="body">
+        <p class="fineprint" style="margin-top:0">
+          Paste an OAuth <b>Web application</b> client ID from the Google Cloud console, with
+          this page's origin (<code id="origin"></code>) listed under its authorised JavaScript
+          origins. The button above then becomes Google's own account chooser &mdash; tap, pick an
+          account, done. Saving it here covers this browser only; put the same ID in
+          <code>GOOGLE_CLIENT_ID</code> at the top of the file to cover everyone.
+          Without a client ID the button makes a local Google-style profile instead.
+        </p>
+        <label class="fld">
+          <span>Google client ID</span>
+          <input id="fClient" type="text" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com">
+        </label>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button type="button" id="btnClientSave" class="sm">Save</button>
+          <button type="button" id="btnClientClear" class="ghost sm">Clear</button>
+        </div>
+      </div>
+    </details>
+
+    <p class="fineprint">
+      Accounts, passwords and save files stay in this browser's <code>localStorage</code> &mdash;
+      there is no server and nothing leaves your device. Passwords are salted and hashed before
+      they are stored, but this is a toy: never reuse a password that matters.
+    </p>
+
+    <div class="board" id="board" hidden>
+      <h3>Local honour roll</h3>
+      <ol id="boardList"></ol>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="gameView" hidden>
+    <div class="topbar">
+      <div class="avatar" id="gAvatar" aria-hidden="true">S</div>
+      <div class="who-block">
+        <div class="nm"><span id="gName">Student</span><span class="badge" id="gProvider">email</span></div>
+        <div class="em" id="gEmail">you@example.com</div>
+      </div>
+      <button type="button" id="btnReset" class="ghost sm">New year</button>
+      <button type="button" id="btnOut" class="ghost sm">Sign out</button>
+    </div>
+
+    <div class="hud" id="hud"></div>
+
+    <div class="cols">
+      <div class="panel">
+        <div class="daybar">
+          <div class="when" id="whenLine">Week 1 &middot; Monday</div>
+          <div class="tag" id="whenTag"></div>
+        </div>
+        <p class="prompt" id="promptLine">How do you spend the day?</p>
+        <div class="acts" id="acts"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Report card so far</h3>
+        <div class="skills" id="skills"></div>
+        <h3>Diary</h3>
+        <div class="log"><ul id="log" aria-live="polite"></ul></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="scrim" class="scrim hidden" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal" id="modal"></div>
+</div>
+<script>
+"use strict";
+
+/* ============================================================
+   0. tiny helpers
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+
+/* ============================================================
+   1. storage
+   ============================================================ */
+const K_USERS = "school.users.v1";
+const K_SESS  = "school.session.v1";
+const K_SAVE  = "school.save.v1.";
+const K_GCID  = "school.googleClientId";
+
+// Paste an OAuth "Web application" client ID between the quotes to make the
+// Google button the real account chooser for everyone who opens this page.
+// Client IDs are public values; it is safe to commit one here. The page's
+// origin must be listed under the client's "Authorised JavaScript origins".
+const GOOGLE_CLIENT_ID = "";
+
+function readJSON(store, key, fallback) {
+  try { const raw = store.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+  catch (_) { return fallback; }
+}
+function writeJSON(store, key, value) {
+  try { store.setItem(key, JSON.stringify(value)); return true; }
+  catch (_) { return false; }
+}
+const loadUsers = () => readJSON(localStorage, K_USERS, {});
+const saveUsers = (u) => writeJSON(localStorage, K_USERS, u);
+
+/* ============================================================
+   2. password hashing
+   WebCrypto PBKDF2 where it exists (https / localhost); a pure-JS
+   fallback keeps the page working from file:// too. Either way the
+   stored record says which scheme produced it.
+   ============================================================ */
+const SHA_K = [
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+
+function sha256Hex(str) {
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  const bytes = [];
+  for (const ch of str) {
+    const c = ch.codePointAt(0);
+    if (c < 0x80) bytes.push(c);
+    else if (c < 0x800) bytes.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+    else if (c < 0x10000) bytes.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    else bytes.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+  }
+  const bits = bytes.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  bytes.push(0, 0, 0, 0, (bits >>> 24) & 255, (bits >>> 16) & 255, (bits >>> 8) & 255, bits & 255);
+
+  let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w = new Array(64);
+  for (let i = 0; i < bytes.length; i += 64) {
+    for (let t = 0; t < 16; t++) {
+      w[t] = (bytes[i + 4*t] << 24) | (bytes[i + 4*t + 1] << 16) | (bytes[i + 4*t + 2] << 8) | bytes[i + 4*t + 3];
+    }
+    for (let t = 16; t < 64; t++) {
+      const a15 = w[t-15], a2 = w[t-2];
+      const s0 = rotr(a15, 7) ^ rotr(a15, 18) ^ (a15 >>> 3);
+      const s1 = rotr(a2, 17) ^ rotr(a2, 19) ^ (a2 >>> 10);
+      w[t] = (w[t-16] + s0 + w[t-7] + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const t1 = (h + S1 + ((e & f) ^ (~e & g)) + SHA_K[t] + w[t]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const t2 = (S0 + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H = [(H[0]+a)|0,(H[1]+b)|0,(H[2]+c)|0,(H[3]+d)|0,(H[4]+e)|0,(H[5]+f)|0,(H[6]+g)|0,(H[7]+h)|0];
+  }
+  return H.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
+}
+
+const SUBTLE = (typeof crypto !== "undefined" && crypto.subtle) ? crypto.subtle : null;
+const PBKDF2_ITERS = 150000;
+const JS_ITERS = 12000;
+
+function randomSalt() {
+  const buf = new Uint8Array(16);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) crypto.getRandomValues(buf);
+  else for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
+  return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function derive(password, salt, algo) {
+  if (algo === "pbkdf2-sha256" && SUBTLE) {
+    const enc = new TextEncoder();
+    const key = await SUBTLE.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+    const bits = await SUBTLE.deriveBits(
+      { name: "PBKDF2", salt: enc.encode(salt), iterations: PBKDF2_ITERS, hash: "SHA-256" }, key, 256);
+    return Array.from(new Uint8Array(bits), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  let h = sha256Hex(salt + "\u0000" + password);
+  for (let i = 0; i < JS_ITERS; i++) h = sha256Hex(h + salt + i);
+  return h;
+}
+
+async function hashPassword(password) {
+  const algo = SUBTLE ? "pbkdf2-sha256" : "js-sha256-iter";
+  const salt = randomSalt();
+  return { algo, salt, hash: await derive(password, salt, algo) };
+}
+async function verifyPassword(password, rec) {
+  if (!rec || !rec.hash) return false;
+  const got = await derive(password, rec.salt, rec.algo);
+  if (got.length !== rec.hash.length) return false;
+  let diff = 0;
+  for (let i = 0; i < got.length; i++) diff |= got.charCodeAt(i) ^ rec.hash.charCodeAt(i);
+  return diff === 0;
+}
+
+/* ============================================================
+   3. accounts
+   ============================================================ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const normEmail = (e) => String(e || "").trim().toLowerCase();
+const nameFromEmail = (e) => {
+  const head = normEmail(e).split("@")[0].replace(/[._\-+]+/g, " ").trim();
+  return head ? head.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 24) : "Student";
+};
+
+function findUser(email) { return loadUsers()[normEmail(email)] || null; }
+
+function putUser(user) {
+  const users = loadUsers();
+  users[user.email] = user;
+  if (!saveUsers(users)) throw new Error("This browser refused to store the account (private mode?).");
+  return user;
+}
+
+function makeUser(email, name, provider, secret) {
+  return Object.assign({
+    id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    email: normEmail(email),
+    name: (name || "").trim().slice(0, 24) || nameFromEmail(email),
+    provider,
+    created: Date.now(),
+    best: null,
+  }, secret || {});
+}
+
+function setSession(user, stay) {
+  const payload = { email: user.email, at: Date.now() };
+  try { sessionStorage.removeItem(K_SESS); localStorage.removeItem(K_SESS); } catch (_) {}
+  writeJSON(stay ? localStorage : sessionStorage, K_SESS, payload);
+}
+function getSession() {
+  const s = readJSON(sessionStorage, K_SESS, null) || readJSON(localStorage, K_SESS, null);
+  return s && s.email ? findUser(s.email) : null;
+}
+function clearSession() {
+  try { sessionStorage.removeItem(K_SESS); localStorage.removeItem(K_SESS); } catch (_) {}
+}
+
+/* ============================================================
+   4. login screen
+   ============================================================ */
+let mode = "in"; // "in" | "up"
+let busy = false;
+
+function showMsg(text, kind) {
+  const box = $("authMsg");
+  box.textContent = text;
+  box.className = "msg " + (kind || "err");
+  box.classList.toggle("hidden", !text);
+}
+
+function setMode(next) {
+  mode = next;
+  $("tabIn").setAttribute("aria-selected", String(next === "in"));
+  $("tabUp").setAttribute("aria-selected", String(next === "up"));
+  $("nameFld").classList.toggle("hidden", next !== "up");
+  $("pass2Fld").classList.toggle("hidden", next !== "up");
+  $("passHint").classList.toggle("hidden", next !== "up");
+  $("fPass").autocomplete = next === "up" ? "new-password" : "current-password";
+  $("btnAuth").textContent = next === "up" ? "Create account" : "Sign in";
+  showMsg("");
+}
+
+$("tabIn").onclick = () => setMode("in");
+$("tabUp").onclick = () => setMode("up");
+
+$("btnPeek").onclick = () => {
+  const on = $("fPass").type === "password";
+  $("fPass").type = on ? "text" : "password";
+  $("btnPeek").textContent = on ? "Hide" : "Show";
+  $("btnPeek").setAttribute("aria-pressed", String(on));
+};
+
+$("authForm").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  if (busy) return;
+  const email = normEmail($("fEmail").value);
+  const pass = $("fPass").value;
+  const stay = $("fStay").checked;
+
+  if (!EMAIL_RE.test(email)) return showMsg("That does not look like an email address.");
+  if (pass.length < 8) return showMsg("Passwords need at least 8 characters.");
+
+  busy = true;
+  $("btnAuth").disabled = true;
+  $("btnAuth").textContent = mode === "up" ? "Enrolling…" : "Checking…";
+  try {
+    if (mode === "up") {
+      if ($("fPass2").value !== pass) return showMsg("The two passwords do not match.");
+      if (findUser(email)) return showMsg("That email already has an account — sign in instead.");
+      const secret = await hashPassword(pass);
+      const user = putUser(makeUser(email, $("fName").value, "email", secret));
+      setSession(user, stay);
+      enterGame(user, true);
+    } else {
+      const user = findUser(email);
+      if (user && user.provider !== "email" && !user.hash) {
+        return showMsg("That account uses the Google button — use it to sign in.");
+      }
+      const ok = user ? await verifyPassword(pass, user) : await verifyPassword(pass, {
+        algo: SUBTLE ? "pbkdf2-sha256" : "js-sha256-iter", salt: "decoy", hash: "0".repeat(64),
+      });
+      if (!user || !ok) return showMsg("Wrong email or password.");
+      setSession(user, stay);
+      enterGame(user, false);
+    }
+  } catch (err) {
+    showMsg(err && err.message ? err.message : "Something went wrong signing you in.");
+  } finally {
+    busy = false;
+    $("btnAuth").disabled = false;
+    $("btnAuth").textContent = mode === "up" ? "Create account" : "Sign in";
+  }
+});
+
+/* ============================================================
+   5. Google sign-in
+   Real Google Identity Services when a client ID is configured;
+   a clearly-labelled local profile when it is not.
+   ============================================================ */
+function clientId() {
+  const q = new URLSearchParams(location.search).get("google_client_id");
+  if (q) { try { localStorage.setItem(K_GCID, q.trim()); } catch (_) {} }
+  try { return (localStorage.getItem(K_GCID) || GOOGLE_CLIENT_ID).trim(); }
+  catch (_) { return GOOGLE_CLIENT_ID.trim(); }
+}
+
+function googleSignIn(email, name, stay) {
+  email = normEmail(email);
+  let user = findUser(email);
+  if (user && user.hash && !clientId()) {
+    showMsg("That email already has a password on this device \u2014 sign in with it above.");
+    return;
+  }
+  if (user) {
+    if (name && user.provider !== "email") user.name = name.slice(0, 24);
+    putUser(user);
+  } else {
+    user = putUser(makeUser(email, name, clientId() ? "google" : "google (local)"));
+  }
+  setSession(user, stay !== false);
+  enterGame(user, !user.best);
+}
+
+function decodeJwtPayload(token) {
+  const part = String(token).split(".")[1] || "";
+  const b64 = part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
+  const json = decodeURIComponent(Array.from(atob(b64), (ch) =>
+    "%" + ch.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+  return JSON.parse(json);
+}
+
+function mountGoogle() {
+  const id = clientId();
+  $("fClient").value = id;
+  $("origin").textContent = location.origin === "null" ? "(open over http:// to get one)" : location.origin;
+  if (!id) {
+    $("btnGoogle").classList.remove("hidden");
+    $("gNote").textContent = "No client ID set, so this makes a local Google-style profile \u2014 nothing is sent to Google.";
+    $("gNote").classList.remove("hidden");
+    $("gsiHost").innerHTML = "";
+    return;
+  }
+  $("gNote").classList.add("hidden");
+  const start = () => {
+    try {
+      google.accounts.id.initialize({
+        client_id: id,
+        callback: (res) => {
+          try {
+            const p = decodeJwtPayload(res.credential);
+            if (!p.email) throw new Error("no email in the Google response");
+            googleSignIn(p.email, p.name || p.given_name || "", $("fStay").checked);
+          } catch (err) {
+            showMsg("Google sign-in came back unreadable: " + (err.message || err));
+          }
+        },
+      });
+      google.accounts.id.renderButton($("gsiHost"), { theme: "filled_black", size: "large", width: 320, text: "continue_with" });
+      $("btnGoogle").classList.add("hidden");
+      // If the rendered button never appears, fall back to Google's chooser prompt.
+      setTimeout(() => {
+        if ($("gsiHost").childElementCount) return;
+        $("gNote").textContent = "";
+        $("gNote").classList.add("hidden");
+        $("btnGoogle").classList.remove("hidden");
+        $("btnGoogle").onclick = () => google.accounts.id.prompt();
+      }, 2000);
+    } catch (err) {
+      showMsg("Google sign-in could not start: " + (err.message || err));
+    }
+  };
+  if (window.google && window.google.accounts) return start();
+  const tag = document.createElement("script");
+  tag.src = "https://accounts.google.com/gsi/client";
+  tag.async = true;
+  tag.defer = true;
+  tag.onload = start;
+  tag.onerror = () => showMsg("Could not reach Google's sign-in script — the button below still works.");
+  document.head.appendChild(tag);
+}
+
+$("btnGoogle").onclick = () => {
+  if (clientId()) return showMsg("Use the Google button above — it is the real one.");
+  openModal({
+    kicker: "Google · local profile",
+    title: "Which address?",
+    body: "No Google client ID is configured, so this makes a local profile that behaves like a Google account: " +
+          "no password, and the save file is tied to the address. Nothing is sent to Google.",
+    html: '<label class="fld"><span>Google address</span>' +
+          '<input id="gEmailIn" type="email" autocomplete="email" placeholder="you@gmail.com"></label>' +
+          '<div id="gErr" class="msg err hidden" role="alert"></div>',
+    buttons: [
+      { label: "Continue", primary: true, keep: true, run: () => {
+          const v = normEmail($("gEmailIn").value);
+          const err = $("gErr");
+          if (!EMAIL_RE.test(v)) {
+            err.textContent = "That does not look like an email address.";
+            err.classList.remove("hidden");
+            return;
+          }
+          closeModal();
+          googleSignIn(v, "", $("fStay").checked);
+        } },
+      { label: "Cancel", run: closeModal },
+    ],
+    onOpen: () => { const el = $("gEmailIn"); if (el) el.focus(); },
+  });
+};
+
+$("btnClientSave").onclick = () => {
+  const v = $("fClient").value.trim();
+  try { v ? localStorage.setItem(K_GCID, v) : localStorage.removeItem(K_GCID); } catch (_) {}
+  mountGoogle();
+  showMsg(v ? "Client ID saved — the Google button is live now." : "Client ID cleared.", "ok");
+};
+$("btnClientClear").onclick = () => {
+  try { localStorage.removeItem(K_GCID); } catch (_) {}
+  $("fClient").value = "";
+  mountGoogle();
+  showMsg("Client ID cleared.", "ok");
+};
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   6. the game
+   ============================================================ */
+const WEEKS = 6;
+const MIDTERM_WEEK = 3;
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const SUBJECTS = [
+  { key: "math", name: "Maths" },
+  { key: "sci",  name: "Science" },
+  { key: "hum",  name: "Humanities" },
+];
+const FX_LABEL = {
+  all: "All subjects", math: "Maths", sci: "Science", hum: "Humanities",
+  energy: "Energy", mood: "Mood", social: "Social", money: "€", fitness: "Fitness",
+};
+const FX_ORDER = ["all", "math", "sci", "hum", "energy", "mood", "social", "money", "fitness"];
+
+let me = null;      // signed-in account
+let S = null;       // game state
+
+function freshState() {
+  return {
+    week: 1, day: 0, phase: "school",
+    energy: 80, mood: 65, social: 25, money: 30, fitness: 20,
+    skills: { math: 20, sci: 20, hum: 20 },
+    quizzes: [], midterm: null, finals: null, ending: null,
+    log: [],
+  };
+}
+
+const saveKey = () => K_SAVE + me.id;
+function persist() { if (me && S) writeJSON(localStorage, saveKey(), S); }
+function loadSave() { return me ? readJSON(localStorage, saveKey(), null) : null; }
+
+/* ---------- stat maths ---------- */
+// The nearer a subject is to mastered, the less an hour of it buys you.
+function effGain(key, v) { return v > 0 ? v * (1 - S.skills[key] / 130) : v; }
+function addSkill(key, v) { S.skills[key] = clamp(S.skills[key] + effGain(key, v), 0, 100); }
+
+function apply(fx) {
+  for (const k of Object.keys(fx)) {
+    const v = fx[k];
+    if (k === "all") {
+      for (const s of SUBJECTS) addSkill(s.key, v);
+    } else if (k in S.skills) {
+      addSkill(k, v);
+    } else if (k === "money") {
+      S.money = Math.max(0, S.money + v);
+    } else if (k in S) {
+      S[k] = clamp(S[k] + v, 0, 100);
+    }
+  }
+}
+const quizAvg = () => S.quizzes.length
+  ? S.quizzes.reduce((a, b) => a + b, 0) / S.quizzes.length : 50;
+const weakest = () => SUBJECTS.slice().sort((a, b) => S.skills[a.key] - S.skills[b.key])[0].key;
+
+function logLine(text, kind) {
+  S.log.unshift({ t: text, k: kind || "", w: S.week, d: S.day });
+  if (S.log.length > 60) S.log.length = 60;
+}
+
+/* ---------- actions ---------- */
+const SCHOOL_ACTIONS = [
+  { id: "class", t: "Sit up front", tag: "free", d: "Actually listen. Nothing heroic, but everything creeps up.",
+    fx: { all: 3, energy: -6, mood: -2 } },
+  { id: "math", t: "Cram maths", tag: "study", d: "Past papers until the numbers stop meaning anything.",
+    fx: { math: 11, energy: -14, mood: -5 } },
+  { id: "sci", t: "Stay for the lab", tag: "study", d: "Titrations with a partner who keeps stealing your pipette.",
+    fx: { sci: 11, social: 2, energy: -14, mood: -4 } },
+  { id: "hum", t: "Library essay", tag: "study", d: "Four sources, one thesis, zero small talk.",
+    fx: { hum: 11, energy: -13, mood: -4 } },
+  { id: "friends", t: "Long lunch with friends", tag: "social", d: "Chips, gossip, someone's questionable playlist.",
+    fx: { social: 9, mood: 12, energy: -5, money: -5 } },
+  { id: "sport", t: "Sports practice", tag: "body", d: "Hurts now, pays back every night you sleep.",
+    fx: { fitness: 6, social: 5, mood: 8, energy: -13 } },
+  { id: "nap", t: "Nap through a free period", tag: "rest", d: "You miss a little of everything and you do not care.",
+    fx: { energy: 22, mood: 6, all: -1 } },
+  { id: "job", t: "Shift at the café", tag: "money", d: "Two hours of milk foam and polite nodding.",
+    fx: { money: 20, energy: -15, mood: -5 } },
+  { id: "skip", t: "Skip fifth period", tag: "risky", d: "The arcade is warm and the teacher is not.",
+    fx: { mood: 14, social: 4, all: -2, money: -8 }, risky: true },
+];
+
+const WEEKEND_ACTIONS = [
+  { id: "sleep", t: "Sleep until noon", tag: "rest", d: "The whole weekend, horizontal.", fx: { energy: 30, mood: 10 } },
+  { id: "cram", t: "Weekend cram session", tag: "study", d: "Two days at the desk, aimed at your worst subject.",
+    fx: { energy: -18, mood: -9 }, weak: 14 },
+  { id: "party", t: "Someone's house party", tag: "social", d: "You will know everyone's name by Monday.",
+    fx: { social: 14, mood: 16, energy: -12, money: -12 } },
+  { id: "double", t: "Double shift", tag: "money", d: "Saturday and Sunday behind the counter.",
+    fx: { money: 45, energy: -22, mood: -7 } },
+  { id: "family", t: "Family weekend", tag: "rest", d: "Board games, a roast, and your allowance.",
+    fx: { energy: 14, mood: 12, money: 12 } },
+  { id: "gym", t: "Gym and a long run", tag: "body", d: "Build the engine that gets you through next week.",
+    fx: { fitness: 9, mood: 6, energy: -12 } },
+];
+
+function canAfford(a) {
+  const cost = -(a.fx.energy || 0);
+  return cost <= 0 || S.energy >= cost;
+}
+
+function chipsFor(fx, extra) {
+  const parts = [];
+  for (const k of FX_ORDER) {
+    if (!(k in fx)) continue;
+    let v = fx[k];
+    if (k === "all") v = Math.round(SUBJECTS.reduce((a, s) => a + effGain(s.key, fx[k]), 0) / SUBJECTS.length);
+    else if (k in S.skills) v = Math.round(effGain(k, fx[k]));
+    if (!v) continue;
+    const sign = v > 0 ? "+" : "−";
+    const txt = k === "money"
+      ? sign + "€" + Math.abs(v)
+      : FX_LABEL[k] + " " + sign + Math.abs(v);
+    parts.push('<span class="chip ' + (v > 0 ? "up" : "down") + '">' + esc(txt) + "</span>");
+  }
+  for (const t of extra || []) parts.push('<span class="chip">' + esc(t) + "</span>");
+  return '<div class="fx">' + parts.join("") + "</div>";
+}
+
+/* ---------- render ---------- */
+function meterClass(v) { return v < 25 ? "meter bad" : v < 50 ? "meter warn" : "meter"; }
+
+function renderHud() {
+  const gpaNow = S.finals ? S.finals.gpa : (S.midterm ? S.midterm.gpa : null);
+  const tiles = [
+    { k: "Term", v: S.phase === "done" ? "Over" : "Week " + S.week + "/" + WEEKS },
+    { k: "Energy", v: Math.round(S.energy), m: S.energy },
+    { k: "Mood", v: Math.round(S.mood), m: S.mood },
+    { k: "Social", v: Math.round(S.social), m: S.social },
+    { k: "Wallet", v: "€" + Math.round(S.money) },
+    { k: "GPA", v: gpaNow === null ? "—" : gpaNow.toFixed(2) },
+  ];
+  $("hud").innerHTML = tiles.map((t) =>
+    '<div class="tile"><div class="k">' + esc(t.k) + '</div><div class="v">' + esc(String(t.v)) + "</div>" +
+    (t.m === undefined ? "" : '<div class="' + meterClass(t.m) + '"><i style="width:' + clamp(t.m, 0, 100) + '%"></i></div>') +
+    "</div>").join("");
+}
+
+function renderSkills() {
+  const rows = SUBJECTS.map((s) => {
+    const v = Math.round(S.skills[s.key]);
+    return '<div class="skill"><div class="top"><b>' + esc(s.name) + "</b><span>" + v + "/100</span></div>" +
+           '<div class="bar"><i style="width:' + v + '%"></i></div></div>';
+  });
+  rows.push('<div class="skill"><div class="top"><b>Coursework average</b><span>' +
+    (S.quizzes.length ? Math.round(quizAvg()) + "%" : "no quizzes yet") + "</span></div>" +
+    '<div class="bar"><i style="width:' + (S.quizzes.length ? Math.round(quizAvg()) : 0) + '%"></i></div></div>');
+  rows.push('<div class="skill"><div class="top"><b>Fitness</b><span>' + Math.round(S.fitness) + "/100</span></div>" +
+    '<div class="bar"><i style="width:' + Math.round(S.fitness) + '%"></i></div></div>');
+  $("skills").innerHTML = rows.join("");
+}
+
+function renderLog() {
+  $("log").innerHTML = S.log.map((e) =>
+    '<li class="' + esc(e.k) + '"><b>W' + e.w + " " + (DAYS[e.d] || "Weekend").slice(0, 3) + "</b> — " + esc(e.t) + "</li>"
+  ).join("");
+}
+
+function renderDay() {
+  const acts = $("acts");
+  if (S.phase === "done") {
+    $("whenLine").textContent = "The year is over";
+    $("whenTag").textContent = S.ending ? S.ending.title : "";
+    $("promptLine").textContent = "Read the final report card, then start again if you want a better one.";
+    acts.innerHTML = "";
+    const again = document.createElement("button");
+    again.className = "act primary";
+    again.innerHTML = '<div class="t">See the final report card</div>';
+    again.onclick = () => showEnding();
+    acts.appendChild(again);
+    return;
+  }
+
+  const weekend = S.phase === "weekend";
+  $("whenLine").textContent = weekend
+    ? "Week " + S.week + " · Weekend"
+    : "Week " + S.week + " · " + DAYS[S.day];
+  const examWeek = S.week === MIDTERM_WEEK || S.week === WEEKS;
+  $("whenTag").textContent = weekend ? "two days off"
+    : (S.day === 4 ? (examWeek ? "quiz + exams today" : "quiz day") : (examWeek ? "exam week" : ""));
+  $("promptLine").textContent = weekend
+    ? "Two days are yours. One plan only."
+    : "One thing gets your day. Choose it.";
+
+  const list = weekend ? WEEKEND_ACTIONS : SCHOOL_ACTIONS;
+  acts.innerHTML = "";
+  for (const a of list) {
+    const ok = canAfford(a);
+    const extra = [];
+    if (a.weak) extra.push("Weakest subject +" + Math.round(effGain(weakest(), a.weak)));
+    if (a.risky) extra.push("Might get caught");
+    const b = document.createElement("button");
+    b.className = "act";
+    b.type = "button";
+    b.disabled = !ok;
+    b.innerHTML = '<div class="t"><span>' + esc(a.t) + "</span><em>" + esc(ok ? a.tag : "too tired") + "</em></div>" +
+                  '<div class="d">' + esc(a.d) + "</div>" + chipsFor(a.fx, extra);
+    b.onclick = () => takeTurn(a, weekend);
+    acts.appendChild(b);
+  }
+}
+
+function render() {
+  renderHud(); renderSkills(); renderLog(); renderDay();
+}
+</script>
+<script>
+"use strict";
+
+/* ============================================================
+   7. modal
+   ============================================================ */
+let lastFocus = null;
+let modalDismissible = false;
+
+function openModal(cfg) {
+  lastFocus = document.activeElement;
+  modalDismissible = !!cfg.dismissible;
+  const buttons = (cfg.buttons || []).map((b, i) =>
+    '<button type="button" class="act' + (b.primary ? " primary" : "") + '" data-i="' + i + '">' +
+      '<div class="t"><span>' + esc(b.label) + "</span>" + (b.tag ? "<em>" + esc(b.tag) + "</em>" : "") + "</div>" +
+      (b.note ? '<div class="d">' + esc(b.note) + "</div>" : "") +
+    "</button>").join("");
+
+  $("modal").innerHTML =
+    (cfg.kicker ? '<div class="kicker">' + esc(cfg.kicker) + "</div>" : "") +
+    '<h2 id="mTitle">' + esc(cfg.title || "") + "</h2>" +
+    (cfg.body ? "<p>" + esc(cfg.body) + "</p>" : "") +
+    (cfg.html || "") +
+    (buttons ? '<div class="acts">' + buttons + "</div>" : "");
+
+  $("modal").querySelectorAll("button[data-i]").forEach((el) => {
+    const b = cfg.buttons[Number(el.dataset.i)];
+    el.onclick = () => { if (b.keep) { b.run && b.run(); } else { closeModal(); b.run && b.run(); } };
+  });
+
+  $("scrim").classList.remove("hidden");
+  if (cfg.onOpen) cfg.onOpen();
+  else {
+    const first = $("modal").querySelector("input, button");
+    if (first) first.focus();
+  }
+}
+
+function closeModal() {
+  $("scrim").classList.add("hidden");
+  $("modal").innerHTML = "";
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+  lastFocus = null;
+}
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && modalDismissible && !$("scrim").classList.contains("hidden")) closeModal();
+});
+
+/* ============================================================
+   8. turns, events, exams
+   ============================================================ */
+function applyAction(a) {
+  apply(a.fx);
+  if (a.weak) addSkill(weakest(), a.weak);
+  if (a.risky && Math.random() < 0.35) {
+    apply({ mood: -14, energy: -6 });
+    logLine("Caught skipping. Detention, and a phone call home.", "bad");
+  } else {
+    logLine(a.t + ".", a.fx.mood > 0 ? "good" : "");
+  }
+}
+
+function nightly(times) {
+  for (let i = 0; i < (times || 1); i++) {
+    S.energy = clamp(S.energy + 15 + S.fitness * 0.14, 0, 100);
+    S.mood = clamp(S.mood + (55 - S.mood) * 0.06, 0, 100);
+  }
+  if (S.energy < 18) {
+    apply({ mood: -4 });
+    logLine("You are running on fumes.", "bad");
+  }
+}
+
+const EVENTS = [
+  {
+    kicker: "Corridor", title: "“Can I copy your homework?”",
+    text: "Sam is two minutes from first period and has nothing on the page.",
+    choices: [
+      { label: "Hand it over", note: "Friendship is a currency.", run: () => {
+          apply({ social: 9, mood: 3 });
+          if (Math.random() < 0.3) { apply({ all: -3, mood: -8 }); logLine("Both papers were identical. Both got a zero.", "bad"); }
+          else logLine("Sam owes you one.", "good");
+        } },
+      { label: "Say no", note: "Awkward, honest.", run: () => { apply({ social: -6, mood: 2 }); logLine("You said no. Sam got the grade you would have.", ""); } },
+      { label: "Sit down and explain it", note: "Costs the free period.", run: () => { apply({ all: 3, social: 5, energy: -8 }); logLine("Teaching it twice taught it to you too.", "good"); } },
+    ],
+  },
+  {
+    kicker: "Staff room", title: "Extra tutoring offered",
+    text: "Your worst subject's teacher has an hour free and a suspicious amount of enthusiasm.",
+    choices: [
+      { label: "Take the hour", note: "Weakest subject, straight up.", run: () => {
+          const k = weakest();
+          addSkill(k, 13);
+          apply({ energy: -10 });
+          logLine("An hour of tutoring in " + SUBJECTS.find((s) => s.key === k).name + ".", "good");
+        } },
+      { label: "Politely decline", note: "The bus home is right there.", run: () => { apply({ mood: 5, energy: 4 }); logLine("You went home instead.", ""); } },
+    ],
+  },
+  {
+    kicker: "Assembly", title: "The festival committee wants you",
+    text: "Three weeks of planning, one loud night, and everyone remembers who ran it.",
+    choices: [
+      { label: "Join the committee", run: () => { apply({ social: 12, mood: 8, energy: -12 }); logLine("You are on the festival committee.", "good"); } },
+      { label: "Stay out of it", run: () => { apply({ all: 3, energy: -4 }); logLine("You used the hour on coursework instead.", ""); } },
+    ],
+  },
+  {
+    kicker: "Group work", title: "Project partners assigned",
+    text: "Two of them are reliable. One of them is a rumour.",
+    choices: [
+      { label: "Do the whole thing yourself", run: () => { apply({ all: 5, energy: -16, social: -5, mood: -5 }); logLine("You carried the project. Everyone noticed except the teacher.", ""); } },
+      { label: "Split it and chase them", run: () => { apply({ all: 3, social: 7, energy: -7 }); logLine("You split the project and it held together.", "good"); } },
+    ],
+  },
+  {
+    kicker: "Cafeteria", title: "A rumour with your name on it",
+    text: "It is not true, it is not kind, and it is already three tables ahead of you.",
+    choices: [
+      { label: "Laugh it off loudly", run: () => {
+          if (S.social > 45) { apply({ social: 8, mood: 4 }); logLine("You made it funnier than they did. It died by lunch.", "good"); }
+          else { apply({ social: -3, mood: -6 }); logLine("Nobody laughed with you.", "bad"); }
+        } },
+      { label: "Say nothing", run: () => { apply({ mood: -7 }); logLine("You let it run. It ran all day.", "bad"); } },
+      { label: "Talk to the one who started it", run: () => { apply({ social: 4, mood: -3, energy: -5 }); logLine("An unpleasant conversation that worked.", ""); } },
+    ],
+  },
+  {
+    kicker: "Notice board", title: "Scholarship information session",
+    text: "Free biscuits, a slideshow, and a genuinely useful deadline.",
+    choices: [
+      { label: "Sit through it", run: () => { apply({ all: 3, mood: 4, energy: -6 }); logLine("You wrote the scholarship deadline on your hand.", "good"); } },
+      { label: "Go home", run: () => { apply({ energy: 6 }); logLine("You skipped the session.", ""); } },
+    ],
+  },
+  {
+    kicker: "Last period", title: "Your crush needs the notes",
+    text: "The ones you actually took, for once.",
+    choices: [
+      { label: "Lend the notes", run: () => { apply({ social: 9, mood: 8 }); logLine("Notes lent. Possibly a look, possibly nothing.", "good"); } },
+      { label: "Offer to study together", run: () => { apply({ social: 7, mood: 9, hum: 5, energy: -9 }); logLine("Two hours of studying, forty minutes of it actual studying.", "good"); } },
+    ],
+  },
+  {
+    kicker: "Nurse's office", title: "You feel awful",
+    text: "Sore throat, heavy head, a full timetable.",
+    choices: [
+      { label: "Push through the day", run: () => { apply({ all: 2, energy: -18, mood: -6 }); logLine("You pushed through and felt worse.", "bad"); } },
+      { label: "Go home and sleep", run: () => { apply({ energy: 26, mood: 6, all: -2 }); logLine("You went home and slept it off.", "") } },
+    ],
+  },
+];
+
+const FLAVOR = [
+  { fx: { money: 20, mood: 4 }, t: "You found €20 in an old coat pocket." },
+  { fx: { mood: -6, energy: -4 }, t: "Phone confiscated in second period. Detention." },
+  { fx: { mood: 6 }, t: "A free period appeared out of nowhere. Sun, grass, nothing owed." },
+  { fx: { social: 5, mood: 3 }, t: "Someone saved you a seat without being asked." },
+  { fx: { energy: -8 }, t: "Fire drill in the rain. Forty minutes of standing." },
+  { fx: { all: 2 }, t: "A documentary in class that was, annoyingly, interesting." },
+];
+
+function maybeEvent(next) {
+  const roll = Math.random();
+  if (roll < 0.26) {
+    const ev = pick(EVENTS);
+    openModal({
+      kicker: ev.kicker, title: ev.title, body: ev.text,
+      buttons: ev.choices.map((c, i) => ({
+        label: c.label, note: c.note, primary: i === 0,
+        run: () => { c.run(); next(); },
+      })),
+    });
+    return;
+  }
+  if (roll < 0.42) {
+    const f = pick(FLAVOR);
+    apply(f.fx);
+    logLine(f.t, f.fx.mood > 0 ? "good" : (f.fx.mood < 0 ? "bad" : ""));
+  }
+  next();
+}
+
+function runQuiz() {
+  const sub = SUBJECTS[(S.week - 1) % SUBJECTS.length];
+  const score = Math.round(clamp(
+    10 + S.skills[sub.key] * 0.72 + S.mood * 0.10 + S.energy * 0.06 + rand(-8, 8), 0, 100));
+  S.quizzes.push(score);
+  logLine("Friday quiz — " + sub.name + ": " + score + "%.",
+    score >= 70 ? "good" : (score < 50 ? "bad" : ""));
+}
+
+function gradeOf(score) {
+  const table = [[93,"A",4],[90,"A-",3.7],[87,"B+",3.3],[83,"B",3],[80,"B-",2.7],
+                 [77,"C+",2.3],[73,"C",2],[70,"C-",1.7],[67,"D+",1.3],[63,"D",1],[60,"D-",0.7]];
+  for (const [min, letter, pts] of table) if (score >= min) return { letter, pts };
+  return { letter: "F", pts: 0 };
+}
+const gradeClass = (l) => "g-" + l[0].toLowerCase();
+
+function sitExam(kind) {
+  // Coursework and (for the finals) the midterm carry a few points of the paper.
+  let bonus = (quizAvg() - 50) * 0.12;
+  if (kind === "final" && S.midterm) bonus += clamp((S.midterm.avg - 60) * 0.10, -5, 5);
+  const rows = SUBJECTS.map((s) => {
+    const raw = 20 + S.skills[s.key] * 0.70 + S.mood * 0.08 + S.energy * 0.05 + bonus + rand(-5, 5);
+    const score = Math.round(clamp(raw, 0, 99));
+    return Object.assign({ subject: s.name, score }, gradeOf(score));
+  });
+  const gpa = rows.reduce((a, r) => a + r.pts, 0) / rows.length;
+  const avg = rows.reduce((a, r) => a + r.score, 0) / rows.length;
+  return { rows, avg, gpa: Math.round(gpa * 100) / 100 };
+}
+
+function showExam(kind, result, after) {
+  openModal({
+    kicker: kind === "mid" ? "Week " + MIDTERM_WEEK + " · midterms" : "Week " + WEEKS + " · finals",
+    title: kind === "mid" ? "Midterm results" : "Final results",
+    html: '<div class="big-score"><b>' + result.gpa.toFixed(2) + "</b><span>grade point average</span></div>" +
+      '<div class="grades">' + result.rows.map((r) =>
+        "<div><span>" + esc(r.subject) + "</span><b class=\"" + gradeClass(r.letter) + "\">" +
+        r.score + "% · " + r.letter + "</b></div>").join("") + "</div>",
+    buttons: [{ label: kind === "mid" ? "Back to it" : "See the year's verdict", primary: true, run: after }],
+  });
+}
+
+const ENDINGS = [
+  { id: "valedictorian", test: (f) => f.gpa >= 3.5 && S.mood >= 50 && S.social >= 40,
+    title: "Valedictorian", text: "Top of the year and still a person. Somebody hands you a speech to write." },
+  { id: "burnout", test: (f) => f.gpa >= 3.5,
+    title: "Burnt-out genius", text: "The grades are perfect. You cannot remember the last thing you enjoyed." },
+  { id: "president", test: (f) => f.gpa >= 2.8 && S.social >= 70,
+    title: "Class president energy", text: "Good grades, and a corridor that says your name on the way past." },
+  { id: "honours", test: (f) => f.gpa >= 3.0,
+    title: "Quietly excellent", text: "Honour roll, no fuss. Three teachers will remember you for years." },
+  { id: "popular", test: () => S.social >= 80,
+    title: "Most popular, least prepared", text: "Every party, every group chat, every resit." },
+  { id: "tycoon", test: () => S.money >= 400,
+    title: "Small-time tycoon", text: "You leave the year with a bank balance and a manager who wants you full-time." },
+  { id: "athlete", test: () => S.fitness >= 70,
+    title: "The athlete", text: "Fittest in the year, and the team noticed long before the teachers did." },
+  { id: "solid", test: (f) => f.gpa >= 2.2,
+    title: "A perfectly fine year", text: "Nobody writes songs about a 2.5, but you are moving up with everyone else." },
+  { id: "scraped", test: (f) => f.gpa >= 1.2,
+    title: "Scraped through", text: "Two resits in August and a summer of pretending that was the plan." },
+  { id: "held", test: () => true,
+    title: "Held back", text: "The letter arrives in July. Same corridor, same timetable, one more time." },
+];
+
+function finishYear(finals) {
+  S.finals = finals;
+  const gpa = finals.gpa;
+  const end = ENDINGS.find((e) => e.test({ gpa })) || ENDINGS[ENDINGS.length - 1];
+  S.ending = { title: end.title, text: end.text, gpa };
+  S.phase = "done";
+  logLine("The year ends: " + end.title + " (GPA " + gpa.toFixed(2) + ").", "big");
+
+  if (me && (!me.best || me.best.gpa < gpa)) {
+    me.best = { gpa, title: end.title, at: Date.now() };
+    try { putUser(me); } catch (_) {}
+  }
+  persist();
+  render();
+  showEnding();
+}
+
+function showEnding() {
+  const e = S.ending;
+  if (!e) return;
+  openModal({
+    kicker: "Final report card", title: e.title,
+    html: '<div class="big-score"><b>' + e.gpa.toFixed(2) + "</b><span>final grade point average</span></div>" +
+      "<p>" + esc(e.text) + "</p>" +
+      '<div class="grades">' +
+        "<div><span>Mood</span><b>" + Math.round(S.mood) + "/100</b></div>" +
+        "<div><span>Social standing</span><b>" + Math.round(S.social) + "/100</b></div>" +
+        "<div><span>Fitness</span><b>" + Math.round(S.fitness) + "/100</b></div>" +
+        "<div><span>Saved</span><b>€" + Math.round(S.money) + "</b></div>" +
+        "<div><span>Coursework average</span><b>" + Math.round(quizAvg()) + "%</b></div>" +
+      "</div>",
+    dismissible: true,
+    buttons: [
+      { label: "Start a new year", primary: true, run: newYear },
+      { label: "Close", run: () => {} },
+    ],
+  });
+}
+
+function takeTurn(a, weekend) {
+  if (S.phase === "done") return;
+  applyAction(a);
+
+  if (weekend) {
+    nightly(2);
+    S.week += 1;
+    S.day = 0;
+    S.phase = "school";
+    persist(); render();
+    return;
+  }
+
+  maybeEvent(() => {
+    nightly(1);
+    if (S.day < 4) {
+      S.day += 1;
+      persist(); render();
+      return;
+    }
+    runQuiz();
+    if (S.week === MIDTERM_WEEK) {
+      const res = sitExam("mid");
+      S.midterm = res;
+      persist(); render();
+      showExam("mid", res, () => { S.phase = "weekend"; S.day = 5; persist(); render(); });
+      return;
+    }
+    if (S.week === WEEKS) {
+      const res = sitExam("final");
+      persist(); render();
+      showExam("final", res, () => finishYear(res));
+      return;
+    }
+    S.phase = "weekend";
+    S.day = 5;
+    persist(); render();
+  });
+}
+
+function newYear() {
+  S = freshState();
+  logLine("New timetable, new year. Try not to repeat yourself.", "big");
+  persist();
+  render();
+}
+
+/* ============================================================
+   9. screens
+   ============================================================ */
+function renderBoard() {
+  const users = Object.values(loadUsers()).filter((u) => u.best);
+  users.sort((a, b) => b.best.gpa - a.best.gpa);
+  const top = users.slice(0, 5);
+  $("board").hidden = top.length === 0;
+  $("boardList").innerHTML = top.map((u) =>
+    '<li><span class="who">' + esc(u.name) + " · " + esc(u.best.title) + "</span><b>" +
+    u.best.gpa.toFixed(2) + "</b></li>").join("");
+}
+
+function enterGame(user, isNew) {
+  me = user;
+  S = loadSave();
+  if (!S || !S.skills) {
+    S = freshState();
+    logLine("First day. " + (user.name || "You") + ", room 2B.", "big");
+    persist();
+  }
+  $("gName").textContent = user.name;
+  $("gEmail").textContent = user.email;
+  $("gProvider").textContent = user.provider;
+  $("gAvatar").textContent = (user.name || user.email || "S").trim().charAt(0).toUpperCase();
+  $("authView").hidden = true;
+  $("gameView").hidden = false;
+  $("fPass").value = "";
+  $("fPass2").value = "";
+  showMsg("");
+  render();
+  if (isNew && S.week === 1 && S.day === 0 && S.phase === "school") {
+    openModal({
+      kicker: "Welcome to 2B", title: "Six weeks, one report card",
+      body: "Every school day you pick one thing to do with it. Fridays are quizzes, week " + MIDTERM_WEEK +
+            " is midterms, week " + WEEKS + " is finals. Energy and mood decide how much any of it sticks.",
+      dismissible: true,
+      buttons: [{ label: "First bell", primary: true, run: () => {} }],
+    });
+  }
+}
+
+function signOut() {
+  persist();
+  clearSession();
+  me = null; S = null;
+  $("gameView").hidden = true;
+  $("authView").hidden = false;
+  $("fPass").value = "";
+  $("fPass2").value = "";
+  renderBoard();
+  setMode("in");
+  $("fEmail").focus();
+}
+
+$("btnOut").onclick = signOut;
+$("btnReset").onclick = () => openModal({
+  kicker: "Careful", title: "Throw away this year?",
+  body: "Your current week, grades and money go back to day one. The honour roll keeps your best year.",
+  dismissible: true,
+  buttons: [
+    { label: "Start over", primary: true, run: newYear },
+    { label: "Keep playing", run: () => {} },
+  ],
+});
+
+/* ---------- boot ---------- */
+setMode("in");
+mountGoogle();
+renderBoard();
+const resumed = getSession();
+if (resumed) enterGame(resumed, false);
+else $("fEmail").focus();
+</script>
+</body>
+</html>

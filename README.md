@@ -46,3 +46,80 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+---
+
+# SCHOOL SIMULATOR
+
+A second browser game in this repo: [`school-simulator.html`](school-simulator.html). Six weeks of school,
+one decision a day, and a report card at the end that is entirely your fault. It asks you to sign in first —
+with an email address and a password, or with Google.
+
+## Signing in
+
+**Email and password.** *Create account* takes a name, an email address and a password of at least 8
+characters. Nothing leaves the browser: the account lives in `localStorage`, and the password is salted and
+run through PBKDF2-SHA256 (150,000 iterations) via WebCrypto before it is stored — the plaintext is never
+written anywhere. Opened over `file://`, where WebCrypto is unavailable, it falls back to an iterated
+SHA-256 implemented in the page and records which scheme it used. Make the password up. It is a game.
+
+**Google.** Out of the box there is no OAuth client ID, so the Google button creates a clearly-labelled
+*local profile*: it asks which address to use, ties a save file to it, and sends nothing to Google. An email
+that already has a password on the device cannot be taken over this way.
+
+For the real account chooser — tap the button, pick a Google account, done — the page needs an OAuth *Web
+application* client ID from the Google Cloud console, with the page's origin (for example
+`https://your-name.github.io` or `http://localhost:8000`) listed under its authorised JavaScript origins.
+Put it in `GOOGLE_CLIENT_ID` at the top of the script and every visitor gets it; the **Use a real Google
+account** panel and `?google_client_id=…` set it for one browser instead. With an ID present the page loads
+Google Identity Services and renders Google's own button, and the returned ID token's email and name become
+the profile. Client IDs are public values, so committing one is fine. There is no backend, so the token is
+only read for a display name — a real app would verify it server-side.
+
+Google Sign-In will not work from `file://`, and it will not work inside an embedded frame such as a Claude
+artifact: it needs a real origin over `https` (or `http://localhost`) that matches the client's authorised
+origins.
+
+*Stay signed in on this device* keeps the session in `localStorage`; unticked, it lives in `sessionStorage`
+and ends with the tab. Each account gets its own save file, and the login screen shows a local honour roll of
+the best year every account on the device has managed.
+
+## Running it
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/school-simulator.html
+```
+
+It works from `file://` as well, with the hashing fallback above; Google Sign-In needs `http://localhost` or
+`https`.
+
+## The year
+
+Five school days a week for six weeks, one activity per day, plus one plan for each weekend.
+
+- **Study** maths, science or humanities — the gains shrink as a subject approaches mastered, so the last
+  ten points cost far more days than the first ten.
+- **Sit up front** nudges all three subjects along for almost no energy.
+- **Lunch with friends, sports practice, a shift at the café, a nap, skipping fifth period** — social
+  standing, fitness, money, energy and mood, each bought with something else. Skipping gets you caught about
+  a third of the time.
+- Roughly four days in ten bring an event: a friend wanting your homework, offered tutoring, a rumour with
+  your name on it, a sick day. Most of them are a choice, not an announcement.
+
+**Fridays** are quizzes, and the quiz average is coursework that counts towards the papers. **Week 3** is
+midterms, and the midterm average feeds into the finals. **Week 6** is finals, and those decide the year.
+
+Every action's real cost is printed on its card, adjusted for where your stats are right now. Energy comes
+back overnight — faster the fitter you are — and mood drifts back towards the middle, slowly. Studying every
+single day works, and it will cost you every point of mood you have.
+
+## The endings
+
+Ten of them, ranked at the final bell from your GPA, mood, social standing, fitness and savings:
+*Valedictorian* (the only one that wants good grades **and** a life), *Burnt-out genius*, *Class president
+energy*, *Quietly excellent*, *Most popular, least prepared*, *Small-time tycoon*, *The athlete*, *A
+perfectly fine year*, *Scraped through*, *Held back*. Clicking at random lands around a 1.0 GPA and the
+popular ending; grinding every day reaches a 3.8 and the burnout. Valedictorian is the hard one.
+
+Your best year per account goes on the honour roll. **New year** resets the current run and keeps it.
