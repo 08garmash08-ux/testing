@@ -2,7 +2,7 @@
 
 A browser game: your camera, your real face, your best **sigma face**.
 
-> Also in this repo: **[Quiet Hands](asmr/)**, an ASMR game with bubble wrap, kinetic sand and slime. See [`asmr/README.md`](asmr/README.md).
+> Also in this repo: **[Quiet Hands](asmr/)**, an ASMR game with bubble wrap, kinetic sand, slime, floral foam and tapping. See [`asmr/README.md`](asmr/README.md).
 
 ## How to play
 
