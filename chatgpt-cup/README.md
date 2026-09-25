@@ -6,7 +6,7 @@ A 3D-printable cup with a handle, and the ChatGPT logo and a **ChatGPT** label s
 
 | File | What it is |
 | --- | --- |
-| `chatgpt_cup.3mf` | Ready to slice. One object with two parts: **Cup** with its handle (extruder 1) and **ChatGPT logo** (extruder 2). |
+| `chatgpt_cup.3mf` | Ready to slice. One object with two parts: **Cup** with its handle (filament 1) and **ChatGPT logo** (filament 2). |
 | `chatgpt_cup.scad` | Parametric OpenSCAD source. Change the size, wall, handle, label or logo. |
 | `chatgpt_logo.svg` | The logo outline the model is built from. |
 | `build_3mf.py` | Rebuilds `chatgpt_cup.3mf` from the source. |
@@ -30,13 +30,18 @@ The grab ring sits on the right when the logo faces you. Seen from the side, it'
 
 ### Two colours (AMS, MMU, IDEX)
 
-Load navy (or black) as filament 1 and white as filament 2. In PrusaSlicer the logo part is already set to extruder 2. The colour changes only happen between 18 mm and 83 mm, where the logo is.
+The cup uses exactly two filaments: navy (or black) as filament 1 and white as filament 2.
 
-In Bambu Studio or OrcaSlicer, check the object list after opening the file. If the cup shows up as a single part, right-click it and choose **Split → To parts**, then set every logo and letter piece to your white filament.
+- **Bambu Studio, OrcaSlicer** and slicers built on them: the cup opens as one object with two parts, **Cup** on filament 1 and **ChatGPT logo** on filament 2. There's nothing to set.
+- **PrusaSlicer**: it asks whether to load the file "as a single object having multiple parts". Answer **Yes**. The cup goes on extruder 1 and the logo on extruder 2.
+
+If a third filament shows up, open the object list and check the filament number on each part. Only 1 and 2 should appear; the file stores no colour painting.
+
+The colour changes only happen between 18 mm and 83 mm, where the logo is.
 
 ### One colour
 
-Just slice it. With a single extruder, the logo prints in the same filament as the cup. For contrast, paint the raised logo afterwards.
+Set the logo part to filament 1 as well, so the whole cup prints in one filament (PrusaSlicer does this by itself on a single-extruder printer). For contrast, paint the raised logo afterwards.
 
 ## Drinking from it
 
