@@ -1,5 +1,5 @@
-// ChatGPT cup — a 3D-printable drinking cup with the ChatGPT logo and a
-// "ChatGPT" label standing out on the front.
+// ChatGPT cup — a 3D-printable drinking cup with a handle, and the ChatGPT
+// logo and a "ChatGPT" label standing out on the front.
 //
 // Open in OpenSCAD, tweak the parameters below, then Render (F6) and export.
 // `python3 build_3mf.py` renders the cup and the logo as separate parts and
@@ -13,6 +13,14 @@ wall          = 2.4;  // wall thickness: a multiple of your line width prints so
 floor_thick   = 3;    // bottom thickness
 floor_fillet  = 5;    // rounded inside corner between floor and wall
 base_chamfer  = 0.8;  // small outer chamfer that hides elephant's foot
+
+/* [Handle] */
+handle        = true; // the grab ring on the right side
+handle_bottom = 14;   // height where the lower arm meets the wall
+handle_top    = 86;   // height where the upper arm meets the wall
+handle_gap    = 21;   // finger room between the wall and the grip
+handle_thick  = 10;   // grip thickness, seen from the side
+handle_width  = 14;   // grip width, seen from the front
 
 /* [Logo] */
 logo_size     = 46;   // width of the logo
@@ -59,8 +67,8 @@ module profile() {
 
 module cup_body()   { rotate_extrude() profile(); }
 
-// The drink space grown halfway into the wall, used to trim the logo back
-// to the outside of the cup without leaving slivers on the inner wall.
+// The drink space grown halfway into the wall, used to trim the logo and the
+// handle back to the wall without leaving anything on the inner wall.
 module cavity() {
     translate([0, 0, floor_thick])
         cylinder(h = height,
@@ -72,6 +80,39 @@ module cavity() {
 // face follows the curve and taper of the cup.
 module emboss_skin() {
     cylinder(h = height, r1 = bottom_radius + emboss, r2 = top_radius + emboss);
+}
+
+// ------------------------------------------------------------------ handle
+
+// One rounded joint of the handle: an ellipsoid, flatter from the side.
+module handle_node(p) {
+    translate([p[0], 0, p[1]])
+        scale([1, handle_width / handle_thick, 1])
+            sphere(d = handle_thick, $fn = 48);
+}
+
+// Two arms leave the wall at 45° and meet a straight grip bar: a half
+// hexagon in side view. Nothing overhangs more than 45°, so it prints
+// upright with no supports. The arms start inside the cup so they run
+// straight through the wall, and the cavity trims them back to it.
+module handle() {
+    bar_x = r_out((handle_bottom + handle_top) / 2) + handle_gap + handle_thick / 2;
+    inset = wall + 3;
+    a = [r_out(handle_bottom) - inset, handle_bottom - inset];
+    b = [bar_x, handle_bottom + bar_x - r_out(handle_bottom)];
+    c = [bar_x, handle_top - (bar_x - r_out(handle_top))];
+    d = [r_out(handle_top) - inset, handle_top + inset];
+    assert(c[1] > b[1], "handle_top and handle_bottom are too close for this handle_gap");
+    difference() {
+        for (arm = [[a, b], [b, c], [c, d]])
+            hull() { handle_node(arm[0]); handle_node(arm[1]); }
+        cavity();
+    }
+}
+
+module body() {
+    cup_body();
+    if (handle) handle();
 }
 
 // -------------------------------------------------------------------- logo
@@ -104,16 +145,16 @@ module logo_part() {
                 if (label != "") through_front(label_z) label_2d();
             }
         }
-        cup_body();
+        body();
         cavity();
     }
 }
 
 // -------------------------------------------------------------------- cup
 
-if (part == "body") cup_body();
+if (part == "body") body();
 else if (part == "logo") logo_part();
 else {
-    color(cup_color) cup_body();
+    color(cup_color) body();
     color(logo_color) logo_part();
 }

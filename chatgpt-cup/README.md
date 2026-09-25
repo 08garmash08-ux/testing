@@ -1,25 +1,29 @@
 # ChatGPT cup
 
-A 3D-printable cup with the ChatGPT logo and a **ChatGPT** label standing out on the front. The body is navy and the logo white, and in the 3MF they're separate parts, so a multi-colour printer can print them in two filaments.
+A 3D-printable cup with a handle, and the ChatGPT logo and a **ChatGPT** label standing out on the front. The body is navy and the logo white, and in the 3MF they're separate parts, so a multi-colour printer can print them in two filaments.
 
 ![ChatGPT cup preview](preview.png)
 
 | File | What it is |
 | --- | --- |
-| `chatgpt_cup.3mf` | Ready to slice. One object with two parts: **Cup** (extruder 1) and **ChatGPT logo** (extruder 2). |
-| `chatgpt_cup.scad` | Parametric OpenSCAD source. Change the size, wall, label or logo. |
+| `chatgpt_cup.3mf` | Ready to slice. One object with two parts: **Cup** with its handle (extruder 1) and **ChatGPT logo** (extruder 2). |
+| `chatgpt_cup.scad` | Parametric OpenSCAD source. Change the size, wall, handle, label or logo. |
 | `chatgpt_logo.svg` | The logo outline the model is built from. |
 | `build_3mf.py` | Rebuilds `chatgpt_cup.3mf` from the source. |
 
 ## Size
 
-- 84 mm wide at the rim, 70 mm at the base, 101 mm tall
+- 84 mm wide at the rim, 70 mm at the base, 101 mm tall; 112 mm across including the handle
 - Holds about **400 ml**
-- About 68 cm³ of plastic, roughly 85 g of PLA. Under 2 g of that is the logo.
+- About 79 cm³ of plastic, roughly 97 g of PLA. Under 2 g of that is the logo.
+
+## Handle
+
+The grab ring sits on the right when the logo faces you. Seen from the side, it's half a hexagon: two arms leave the wall at 45° and meet a straight grip bar. That way nothing on the handle overhangs more than 45°, so it prints upright without supports, where a round loop would sag at the top. There are 21 mm of finger room between the wall and the grip.
 
 ## Printing
 
-- Print it **upright, on its base, with no supports**. The logo stands out 1.2 mm, and its undersides are short enough to print without support.
+- Print it **upright, on its base, with no supports**. The handle is built to print that way, and the logo stands out only 1.2 mm, so its undersides print fine too.
 - Layer height: 0.2 mm
 - Walls: the wall is 2.4 mm thick. Set **6 perimeters** for a 0.4 mm nozzle, or use 100% infill, so the wall prints fully solid and doesn't leak.
 - Bottom: 15 solid bottom layers at 0.2 mm, so the whole 3 mm floor prints solid.
@@ -43,6 +47,7 @@ Plain FDM prints aren't food-safe. Bacteria can grow in the layer lines, and PLA
 Open `chatgpt_cup.scad` in [OpenSCAD](https://openscad.org). The parameters at the top show up in the Customizer panel:
 
 - `height`, `bottom_radius`, `top_radius`, `wall`, `floor_thick`: the cup's shape
+- `handle`, `handle_bottom`, `handle_top`, `handle_gap`, `handle_thick`, `handle_width`: the handle (set `handle = false` to remove it)
 - `logo_size`, `logo_z`: the logo's width and height on the cup
 - `label`, `label_size`, `label_z`, `label_font`: the text (set `label = ""` to remove it)
 - `emboss`: how far the logo and text stand out
