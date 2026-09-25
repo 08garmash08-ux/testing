@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiet Hands</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600&family=Young+Serif&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --desk:#111916;
+    --panel:#18231f;
+    --mat:#22433a;
+    --edge:rgba(214,236,222,.13);
+    --edge-strong:rgba(214,236,222,.28);
+    --ink:#e3ebe5;
+    --ink-dim:#93a89e;
+    --ink-faint:#62786e;
+    --peach:#f0bf9b;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--desk);color:var(--ink);
+    font:15px/1.5 "Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    height:100%;max-width:1180px;margin:0 auto;
+    display:flex;flex-direction:column;gap:12px;
+    padding-inline:16px;padding-block:14px 12px;
+  }
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px 18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:12px;min-width:0}
+  h1{margin:0;font-family:"Young Serif",Georgia,"Times New Roman",serif;font-weight:400;font-size:26px;line-height:1.1;letter-spacing:.005em;text-wrap:balance}
+  .brand p{margin:0;color:var(--ink-dim);font-size:13px}
+
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tabs{display:flex;gap:2px;padding:3px;border:1px solid var(--edge);border-radius:999px;background:var(--panel)}
+  .tabs button,.toggle{
+    font:inherit;font-size:13px;font-weight:500;color:var(--ink-dim);
+    background:transparent;border:0;border-radius:999px;padding:7px 14px;cursor:pointer;
+    transition:background-color .2s,color .2s,border-color .2s;
+  }
+  .tabs button:hover,.toggle:hover{color:var(--ink)}
+  .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--desk)}
+  .toggle{border:1px solid var(--edge);display:inline-flex;align-items:center;gap:7px}
+  .toggle::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-faint);transition:background-color .2s}
+  .toggle[aria-pressed="true"]{color:var(--ink);border-color:var(--edge-strong)}
+  .toggle[aria-pressed="true"]::before{background:var(--peach)}
+  button:focus-visible,canvas:focus-visible{outline:2px solid var(--peach);outline-offset:2px}
+
+  .stage{position:relative;flex:1;min-height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--edge);background:var(--mat)}
+  canvas{
+    position:absolute;inset:0;width:100%;height:100%;display:block;
+    touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  }
+  canvas:focus-visible{outline-offset:-3px}
+  .toast{
+    position:absolute;top:14px;left:50%;transform:translate(-50%,-8px);opacity:0;pointer-events:none;
+    max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    background:rgba(12,20,17,.8);border:1px solid var(--edge);border-radius:999px;
+    padding:7px 16px;font-size:13px;color:var(--ink);
+    transition:opacity .35s,transform .35s;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  footer{display:flex;flex-direction:column;gap:6px}
+  .readout{display:flex;align-items:center;justify-content:space-between;gap:8px 24px;flex-wrap:wrap}
+  .stats{display:flex;gap:6px 22px;flex-wrap:wrap}
+  .stat{display:flex;align-items:baseline;gap:7px;font-size:13px;color:var(--ink-dim)}
+  .stat b{font-family:"DM Mono",ui-monospace,Menlo,monospace;font-weight:500;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .meter{display:flex;align-items:center;gap:10px;font:12px "DM Mono",ui-monospace,Menlo,monospace;color:var(--ink-dim);letter-spacing:.06em;text-transform:uppercase}
+  .meter .bar{width:140px;height:4px;border-radius:4px;background:rgba(214,236,222,.12);overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:var(--peach);border-radius:4px;transition:width .25s}
+  .meter output{min-width:4ch;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .hint{margin:0;font-size:13px;color:var(--ink-dim);max-width:78ch}
+  .hint #ear{color:var(--peach)}
+  .hint kbd{font:11px "DM Mono",ui-monospace,Menlo,monospace;border:1px solid var(--edge);border-radius:4px;padding:0 4px;color:var(--ink)}
+
+  @media (max-width:640px){
+    h1{font-size:22px}
+    .brand p{display:none}
+    .controls{width:100%}
+    .tabs{flex:1 1 100%}
+    .tabs button{flex:1;padding-inline:6px}
+    .meter .bar{width:96px}
+  }
+  @media (prefers-reduced-motion:reduce){.toast,.meter i,.tabs button,.toggle{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Quiet Hands</h1>
+      <p>Three soft things to press, slice and knead.</p>
+    </div>
+    <div class="controls">
+      <div class="tabs" role="group" aria-label="Trays">
+        <button type="button" id="tab-wrap" data-tray="wrap" aria-pressed="true">Bubble wrap</button>
+        <button type="button" id="tab-sand" data-tray="sand" aria-pressed="false">Kinetic sand</button>
+        <button type="button" id="tab-slime" data-tray="slime" aria-pressed="false">Slime</button>
+      </div>
+      <button type="button" class="toggle" id="rain" aria-pressed="false">Rain</button>
+      <button type="button" class="toggle" id="sound" aria-pressed="true">Sound</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <canvas id="tray" tabindex="0" aria-label="Bubble wrap tray"></canvas>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <footer>
+    <div class="readout">
+      <div class="stats" id="stats"></div>
+      <div class="meter"><span id="meterLabel">Sheet</span><span class="bar"><i id="meterFill"></i></span><output id="meterVal">0%</output></div>
+    </div>
+    <p class="hint"><span id="ear">Headphones recommended. Sound starts on your first touch. </span><span id="hintText"></span> <kbd>Space</kbd> plays one move, <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> switch trays.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const canvas = document.getElementById('tray');
+const ctx = canvas.getContext('2d');
+const stage = document.getElementById('stage');
+const $stats = document.getElementById('stats');
+const $meterLabel = document.getElementById('meterLabel');
+const $meterFill = document.getElementById('meterFill');
+const $meterVal = document.getElementById('meterVal');
+const $hint = document.getElementById('hintText');
+const $ear = document.getElementById('ear');
+const $toast = document.getElementById('toast');
+const $rain = document.getElementById('rain');
+const $sound = document.getElementById('sound');
+const tabs = [...document.querySelectorAll('.tabs button')];
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+const TAU = Math.PI * 2;
+const CM = 24;                       // one centimetre on the cutting mat, in CSS px
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const easeIn = t => t * t * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+let W = 0, H = 0, DPR = 1, clock = 0;
+const view = { s: 1, ox: 0, oy: 0 };
+let current = null;
+let pointerType = 'mouse';
+
+function layer(w, h) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(w * DPR));
+  c.height = Math.max(1, Math.ceil(h * DPR));
+  const g = c.getContext('2d');
+  g.scale(DPR, DPR);
+  return [c, g];
+}
+function panOf(x) { return clamp(((x * view.s + view.ox) / (W || 1)) * 2 - 1, -1, 1); }
+function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function roundRect(g, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+/* ---------- saved totals ---------- */
+const STORE = 'quiet-hands:v1';
+const stats = { popped: 0, sheets: 0, bestRun: 0, slices: 0, thinnest: 0, blocks: 0, pockets: 0, batches: 0 };
+try {
+  const s = JSON.parse(localStorage.getItem(STORE) || '{}');
+  for (const k in stats) if (Number.isFinite(s[k])) stats[k] = s[k];
+} catch (e) {}
+let saveTimer = 0;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify(stats)); } catch (e) {} }, 500);
+}
+function remember(key, val) { try { localStorage.setItem('quiet-hands:' + key, val); } catch (e) {} }
+function recall(key) { try { return localStorage.getItem('quiet-hands:' + key); } catch (e) { return null; } }
+
+/* ---------- sound: everything is synthesised, nothing is sampled ---------- */
+const Sound = {
+  ac: null, muted: false, rain: false,
+
+  start() {
+    if (this.ac) { if (this.ac.state === 'suspended') this.ac.resume().catch(() => {}); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    let ac;
+    try { ac = new AC(); } catch (e) { return; }
+    this.ac = ac;
+
+    this.master = ac.createGain();
+    this.master.gain.value = this.muted ? 0 : 1;
+    const comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 3;
+    comp.attack.value = 0.003; comp.release.value = 0.25;
+    this.master.connect(comp); comp.connect(ac.destination);
+
+    this.out = ac.createGain(); this.out.gain.value = 0.9; this.out.connect(this.master);
+    // a small, close room so the sounds feel near the ear
+    const verb = ac.createConvolver(); verb.buffer = this.impulse(0.9, 3.5);
+    const send = ac.createGain(); send.gain.value = 0.12;
+    this.out.connect(send); send.connect(verb); verb.connect(this.master);
+
+    this.buf = { white: this.noise('white', 2), pink: this.noise('pink', 3), brown: this.noise('brown', 3) };
+
+    const loop = (type, ftype, f, q) => {
+      const s = ac.createBufferSource(); s.buffer = this.buf[type]; s.loop = true;
+      const fl = ac.createBiquadFilter(); fl.type = ftype; fl.frequency.value = f; fl.Q.value = q;
+      const g = ac.createGain(); g.gain.value = 0;
+      s.connect(fl); fl.connect(g);
+      let p = null;
+      if (ac.createStereoPanner) { p = ac.createStereoPanner(); g.connect(p); p.connect(this.out); } else g.connect(this.out);
+      s.start(0, rand(0, s.buffer.duration));
+      return { f: fl, g, p };
+    };
+    this.sandL = loop('pink', 'bandpass', 1700, 0.7);
+    this.slimeA = loop('brown', 'lowpass', 420, 6);
+    this.slimeB = loop('pink', 'bandpass', 1150, 2.2);
+
+    // rain bed
+    const rs = ac.createBufferSource(); rs.buffer = this.buf.pink; rs.loop = true;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.3;
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 320; hp.Q.value = 0.3;
+    this.rainG = ac.createGain(); this.rainG.gain.value = 0;
+    rs.connect(lp); lp.connect(hp); hp.connect(this.rainG); this.rainG.connect(this.master);
+    rs.start(0, rand(0, rs.buffer.duration));
+    this.setRain(this.rain);
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
+  },
+
+  on() { return !!this.ac && !this.muted; },
+  setMuted(m) { this.muted = m; if (this.ac) this.master.gain.setTargetAtTime(m ? 0 : 1, this.ac.currentTime, 0.05); },
+  setRain(r) { this.rain = r; if (this.ac) this.rainG.gain.setTargetAtTime(r ? 0.22 : 0, this.ac.currentTime, 0.6); },
+
+  noise(type, secs) {
+    const ac = this.ac, sr = ac.sampleRate, n = Math.floor(sr * secs), x = Math.floor(sr * 0.05);
+    const raw = new Float32Array(n + x);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0;
+    for (let i = 0; i < n + x; i++) {
+      const w = Math.random() * 2 - 1;
+      if (type === 'white') raw[i] = w * 0.5;
+      else if (type === 'pink') {
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852;
+        b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
+        raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      } else { br = (br + 0.02 * w) / 1.02; raw[i] = br * 3.2; }
+    }
+    const buf = ac.createBuffer(1, n, sr), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = raw[i];
+    for (let i = 0; i < x; i++) { const t = i / x; d[i] = raw[i] * t + raw[n + i] * (1 - t); }  // seamless loop point
+    return buf;
+  },
+  impulse(sec, decay) {
+    const ac = this.ac, n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(2, n, ac.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = b.getChannelData(ch);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decay);
+    }
+    return b;
+  },
+  voice(pan, gain = 1) {
+    const ac = this.ac, g = ac.createGain();
+    g.gain.value = gain;
+    if (ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = clamp(pan, -1, 1) * 0.85; g.connect(p); p.connect(this.out); }
+    else g.connect(this.out);
+    return g;
+  },
+  env(p, t, peak, a, d) {
+    p.setValueAtTime(0.0001, t);
+    p.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a);
+    p.exponentialRampToValueAtTime(0.0001, t + a + d);
+  },
+  burst(dest, o) {
+    const ac = this.ac, t = o.t != null ? o.t : ac.currentTime, a = o.a != null ? o.a : 0.001;
+    const s = ac.createBufferSource(); s.buffer = this.buf[o.type || 'white']; s.playbackRate.value = o.rate || 1;
+    const f = ac.createBiquadFilter(); f.type = o.filter || 'bandpass'; f.Q.value = o.q != null ? o.q : 1;
+    f.frequency.setValueAtTime(o.f, t);
+    if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + a + o.d);
+    const g = ac.createGain(); this.env(g.gain, t, o.peak, a, o.d);
+    s.connect(f); f.connect(g); g.connect(dest);
+    const len = a + o.d + 0.03;
+    s.start(t, Math.random() * Math.max(0, s.buffer.duration - len - 0.05));
+    s.stop(t + len);
+  },
+  tone(dest, o) {
+    const ac = this.ac, t = o.t != null ? o.t : ac.currentTime, a = o.a != null ? o.a : 0.002;
+    const osc = ac.createOscillator(); osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(o.f, t);
+    if (o.f2) osc.frequency.exponentialRampToValueAtTime(o.f2, t + (o.glide || 0.05));
+    const g = ac.createGain(); this.env(g.gain, t, o.peak, a, o.d);
+    osc.connect(g); g.connect(dest);
+    osc.start(t); osc.stop(t + a + o.d + 0.03);
+  },
+
+  // bubble wrap
+  pop(pan, size, delay) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime + (delay || 0), k = rand(0.85, 1.18);
+    this.burst(d, { t, f: (2400 - size * 1100) * k, q: 1.4, peak: 0.8, d: rand(0.03, 0.055) });
+    this.burst(d, { t, f: 5200, filter: 'highpass', q: 0.7, peak: 0.4, a: 0.0005, d: 0.012 });
+    this.tone(d, { t, f: (240 - size * 100) * k, f2: 60, glide: 0.05, peak: 0.5, d: 0.075 });
+    if (Math.random() < 0.35) this.burst(d, { t: t + rand(0.012, 0.03), f: rand(3000, 6000), q: 3, peak: 0.12, d: 0.01 });
+  },
+  squeak(pan) {
+    if (!this.on()) return;
+    const d = this.voice(pan, 0.9), t = this.ac.currentTime, f = rand(1400, 1900);
+    this.tone(d, { t, type: 'triangle', f, f2: f * rand(1.25, 1.45), glide: 0.08, peak: 0.05, a: 0.012, d: 0.07 });
+    this.burst(d, { t, f: rand(2500, 4000), q: 2.5, peak: 0.2, a: 0.004, d: 0.05 });
+  },
+  crinkle(pan, amt) {
+    if (!this.on()) return;
+    const d = this.voice(pan, 0.8), t = this.ac.currentTime, n = 1 + Math.floor(amt * 5);
+    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.06), f: rand(2800, 7500), q: rand(2, 6), peak: rand(0.05, 0.16) * (0.4 + amt), a: 0.0008, d: rand(0.004, 0.014) });
+  },
+  rustle(pan) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime;
+    this.burst(d, { t, type: 'pink', f: 3000, q: 0.8, peak: 0.08, a: 0.3, d: 0.5 });
+    for (let i = 0; i < 26; i++) this.burst(d, { t: t + rand(0, 0.75), f: rand(2500, 7000), q: rand(1.5, 4), peak: rand(0.03, 0.1), a: 0.001, d: rand(0.006, 0.02) });
+  },
+
+  // kinetic sand
+  sandCut(pan, vel) {
+    if (!this.ac) return;
+    const t = this.ac.currentTime, v = clamp(vel / 700, 0, 1), L = this.sandL;
+    L.g.gain.setTargetAtTime(v * 0.5, t, 0.035);
+    L.f.frequency.setTargetAtTime(1100 + v * 1400, t, 0.05);
+    if (L.p) L.p.pan.setTargetAtTime(pan * 0.85, t, 0.05);
+    if (!this.on() || v < 0.02) return;
+    const d = this.voice(pan, 0.9), n = Math.floor(v * 3 + Math.random());
+    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.03), f: rand(2600, 6500), q: rand(3, 7), peak: rand(0.06, 0.22), a: 0.0006, d: rand(0.003, 0.008) });
+  },
+  grains(pan, n) {
+    if (!this.on()) return;
+    const d = this.voice(pan, 0.8), t = this.ac.currentTime;
+    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.05), f: rand(2600, 6500), q: rand(3, 7), peak: rand(0.05, 0.15), a: 0.0006, d: rand(0.003, 0.008) });
+  },
+  thud(pan, mass) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime, m = clamp(mass, 0.15, 1);
+    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 380, q: 0.8, peak: 0.9 * m + 0.1, a: 0.004, d: 0.16 });
+    this.tone(d, { t, f: 95, f2: 48, glide: 0.1, peak: 0.35 * m, a: 0.004, d: 0.12 });
+    this.burst(d, { t: t + 0.01, type: 'pink', f: 1800, q: 0.7, peak: 0.18 * m, a: 0.01, d: 0.25 });
+  },
+  crumble(pan, mass) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime, m = clamp(mass, 0.15, 1);
+    this.burst(d, { t, type: 'pink', f: 2200, f2: 1400, q: 0.6, peak: 0.28 * m + 0.05, a: 0.03, d: 0.5 });
+    const n = Math.floor(18 + m * 30);
+    for (let i = 0; i < n; i++) {
+      const u = Math.pow(Math.random(), 1.8);
+      this.burst(d, { t: t + u * 0.55, f: rand(2400, 7000), q: rand(3, 8), peak: rand(0.05, 0.2) * (1 - u * 0.6), a: 0.0006, d: rand(0.003, 0.01) });
+    }
+  },
+  sweep() {
+    if (!this.on()) return;
+    this.burst(this.voice(0), { type: 'pink', f: 450, f2: 2600, q: 0.8, peak: 0.3, a: 0.3, d: 0.6 });
+  },
+
+  // slime
+  slimeMove(pan, speed, press) {
+    if (!this.ac) return;
+    const t = this.ac.currentTime, v = clamp(speed / 900, 0, 1) * (0.35 + 0.65 * press), A = this.slimeA, B = this.slimeB;
+    A.g.gain.setTargetAtTime(v * 0.8, t, 0.05);
+    A.f.frequency.setTargetAtTime(260 + v * 900 + Math.sin(t * 11) * 70 + Math.random() * 80, t, 0.03);
+    B.g.gain.setTargetAtTime(v * v * 0.22, t, 0.06);
+    B.f.frequency.setTargetAtTime(900 + v * 700, t, 0.06);
+    if (A.p) { A.p.pan.setTargetAtTime(pan * 0.85, t, 0.05); B.p.pan.setTargetAtTime(pan * 0.85, t, 0.05); }
+  },
+  click(pan, s, delay) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime + (delay || 0), f = rand(650, 1700);
+    this.tone(d, { t, f, f2: f * rand(1.5, 2.4), glide: 0.012, peak: 0.28 * s, a: 0.0008, d: rand(0.012, 0.03) });
+    this.burst(d, { t, f: rand(1800, 4200), q: 3.5, peak: 0.3 * s, a: 0.0005, d: 0.008 });
+  },
+  squish(pan) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime;
+    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 800, f2: 220, q: 5, peak: 0.6, a: 0.012, d: 0.2 });
+    this.burst(d, { t, type: 'pink', f: 1300, q: 3, peak: 0.12, a: 0.006, d: 0.12 });
+    this.click(pan, 0.6, 0.03); this.click(pan, 0.4, 0.07);
+  },
+  suction(pan) {
+    if (!this.on()) return;
+    const d = this.voice(pan), t = this.ac.currentTime;
+    this.tone(d, { t, f: 190, f2: rand(560, 820), glide: 0.05, peak: 0.2, a: 0.003, d: 0.06 });
+    this.burst(d, { t, type: 'pink', f: 900, f2: 2300, q: 4, peak: 0.16, a: 0.003, d: 0.06 });
+    this.click(pan, 0.5, 0.035);
+  },
+
+  chime(pan, steps) {
+    if (!this.on()) return;
+    const base = 523.25;
+    steps.forEach((s, i) => {
+      const d = this.voice(pan + (i - 1.5) * 0.2), t = this.ac.currentTime + 0.05 + i * 0.12, f = base * Math.pow(2, s / 12);
+      this.tone(d, { t, f, peak: 0.09, a: 0.004, d: 1.8 });
+      this.tone(d, { t, f: f * 2.01, peak: 0.03, a: 0.003, d: 0.9 });
+      this.tone(d, { t, f: f * 3.98, peak: 0.008, a: 0.002, d: 0.4 });
+    });
+  },
+  silence() {
+    if (!this.ac) return;
+    const t = this.ac.currentTime;
+    for (const L of [this.sandL, this.slimeA, this.slimeB]) L.g.gain.setTargetAtTime(0, t, 0.05);
+  },
+  tick(dt) {
+    if (!this.ac || !this.rain || this.muted || this.ac.state !== 'running') return;
+    if (Math.random() < dt * 9) {
+      const d = this.voice(rand(-1, 1)), t = this.ac.currentTime + rand(0, 0.015), f = rand(1900, 4800);
+      this.tone(d, { t, f, f2: f * rand(0.55, 0.75), glide: 0.02, peak: rand(0.006, 0.026), a: 0.001, d: rand(0.015, 0.035) });
+    }
+    if (Math.random() < dt * 1.2) {
+      const d = this.voice(rand(-1, 1)), f = rand(700, 1100);
+      this.tone(d, { f, f2: f * 1.6, glide: 0.03, peak: 0.02, a: 0.002, d: 0.05 });
+    }
+  }
+};
+
+/* ---------- small effects shared by the trays ---------- */
+let fx = [];
+function addFx(o) { o.t = 0; fx.push(o); }
+function updateFx(dt) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i];
+    f.t += dt;
+    if (f.vx != null) { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += (f.g || 0) * dt; }
+    if (f.t >= f.life) fx.splice(i, 1);
+  }
+}
+function drawFx() {
+  for (const f of fx) {
+    const p = f.t / f.life, a = 1 - p;
+    if (f.kind === 'ring') {
+      ctx.strokeStyle = `rgba(240,250,255,${(0.5 * a).toFixed(3)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r0 + (f.r1 - f.r0) * easeOut(p), 0, TAU); ctx.stroke();
+    } else if (f.kind === 'speck') {
+      ctx.fillStyle = `rgba(240,250,255,${(0.7 * a).toFixed(3)})`;
+      ctx.fillRect(f.x - 1, f.y - 1, 2, 2);
+    } else if (f.kind === 'text') {
+      ctx.globalAlpha = p > 0.6 ? (1 - p) / 0.4 : 1;
+      ctx.font = '500 12px "DM Mono", ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#e3ebe5';
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.globalAlpha = 1;
+    } else if (f.kind === 'dust') {
+      ctx.globalAlpha = 0.28 * a;
+      ctx.fillStyle = f.c;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (1 + p), 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (f.kind === 'crumb') {
+      ctx.globalAlpha = a;
+      ctx.fillStyle = f.c;
+      ctx.fillRect(f.x - 1, f.y - 1, 2, 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+/* ---------- the cutting mat ---------- */
+let mat = null;
+function drawMat() {
+  const [c, g] = layer(W, H);
+  mat = c;
+  g.fillStyle = '#22433a'; g.fillRect(0, 0, W, H);
+  const vg = g.createRadialGradient(W * 0.5, H * 0.35, 0, W * 0.5, H * 0.45, Math.hypot(W, H) * 0.65);
+  vg.addColorStop(0, 'rgba(255,255,255,.045)'); vg.addColorStop(1, 'rgba(0,0,0,.28)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+
+  const ox = 30, oy = 28;
+  const line = (x1, y1, x2, y2, a) => {
+    g.strokeStyle = `rgba(214,236,222,${a})`; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+  };
+  for (let i = 0, x = ox; x < W; i++, x += CM) { const X = Math.round(x) + 0.5; line(X, oy, X, H, i % 5 === 0 ? 0.13 : 0.06); }
+  for (let i = 0, y = oy; y < H; i++, y += CM) { const Y = Math.round(y) + 0.5; line(ox, Y, W, Y, i % 5 === 0 ? 0.13 : 0.06); }
+  for (let i = 0, x = ox; x < W; i++, x += CM / 2) { const X = Math.round(x) + 0.5; line(X, oy - (i % 2 ? 4 : 8), X, oy, 0.35); }
+  for (let i = 0, y = oy; y < H; i++, y += CM / 2) { const Y = Math.round(y) + 0.5; line(ox - (i % 2 ? 4 : 8), Y, ox, Y, 0.35); }
+  // 45° and 60° guides, as printed on real mats
+  line(ox, oy, ox + (H - oy), H, 0.07);
+  line(ox, oy, ox + (H - oy) * Math.tan(Math.PI / 6), H, 0.05);
+
+  g.fillStyle = 'rgba(214,236,222,.42)';
+  g.font = '10px "DM Mono", ui-monospace, Menlo, monospace';
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  for (let i = 1, x = ox + CM; x < W - 8; i++, x += CM) g.fillText(String(i), x, oy - 11);
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (let i = 1, y = oy + CM; y < H - 6; i++, y += CM) g.fillText(String(i), ox - 11, y);
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillText('cm', 6, 14);
+}
+
+/* ================= BUBBLE WRAP ================= */
+function bubbleSprite(r) {
+  const pad = 6, half = r + pad;
+  const [c, g] = layer(half * 2, half * 2);
+  const cx = half, cy = half;
+  let gr = g.createRadialGradient(cx + 1.5, cy + 2.5, r * 0.3, cx + 1.5, cy + 2.5, r * 1.12);
+  gr.addColorStop(0, 'rgba(4,20,15,.32)'); gr.addColorStop(1, 'rgba(4,20,15,0)');
+  g.fillStyle = gr; g.beginPath(); g.arc(cx + 1.5, cy + 2.5, r * 1.12, 0, TAU); g.fill();
+  gr = g.createRadialGradient(cx - r * 0.38, cy - r * 0.42, r * 0.04, cx, cy, r);
+  gr.addColorStop(0, 'rgba(255,255,255,.9)');
+  gr.addColorStop(0.2, 'rgba(236,246,255,.34)');
+  gr.addColorStop(0.68, 'rgba(196,224,244,.1)');
+  gr.addColorStop(1, 'rgba(224,241,255,.36)');
+  g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(238,248,255,.45)'; g.lineWidth = 1; g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.22)'; g.lineWidth = Math.max(1, r * 0.08);
+  g.beginPath(); g.arc(cx, cy, r * 0.7, 0.15, 1.45); g.stroke();
+  return { c, half };
+}
+
+const Wrap = {
+  name: 'wrap', cursor: 'pointer',
+  label: 'Bubble wrap tray. Press or drag across bubbles to pop them.',
+  hint: 'Press a bubble to pop it, or drag along a row to pop a whole run. A few stubborn ones squeak and need a second press.',
+  LW: 0, LH: 0,
+  kinds: [{ name: 'Classic', r: 17 }, { name: 'Small bubble', r: 11.5 }, { name: 'Jumbo', r: 25 }],
+  kind: 0, bubbles: [], left: 0, total: 0, slide: 0, phase: 'idle', phaseT: 0,
+  pressed: false, last: null, lastHit: null, run: 0, batch: 0, hover: null, crinkleAt: 0,
+
+  build() {
+    const k = this.kinds[this.kind % this.kinds.length];
+    const r = k.r * clamp(Math.min(this.LW, this.LH) / 520, 0.78, 1.12);
+    const sw = Math.min(this.LW - 40, 680), sh = Math.min(this.LH - 40, 460);
+    this.sheet = { x: (this.LW - sw) / 2, y: (this.LH - sh) / 2, w: sw, h: sh, r };
+    const dx = r * 2.3, dy = dx * 0.866, pad = r * 0.7;
+    const cols = Math.max(1, Math.floor((sw - 2 * pad - 2 * r - dx / 2) / dx) + 1);
+    const rows = Math.max(1, Math.floor((sh - 2 * pad - 2 * r) / dy) + 1);
+    const gw = (cols - 1) * dx + dx / 2 + 2 * r, gh = (rows - 1) * dy + 2 * r;
+    const ox = (sw - gw) / 2 + r, oy = (sh - gh) / 2 + r;
+    this.bubbles = [];
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      this.bubbles.push({ x: ox + i * dx + (j % 2 ? dx / 2 : 0), y: oy + j * dy, r: r * rand(0.95, 1.04), popped: false, t: 0, dud: Math.random() < 0.06, squeaked: false });
+    }
+    this.left = this.total = this.bubbles.length;
+    this.sprite = bubbleSprite(r);
+    [this.layer, this.lg] = layer(sw, sh);
+    this.paintSheet();
+    this.hover = null; this.lastHit = null;
+    if (this.phase !== 'in') { this.phase = 'idle'; this.slide = 0; }
+  },
+  paintSheet() {
+    const g = this.lg, s = this.sheet;
+    roundRect(g, 0.5, 0.5, s.w - 1, s.h - 1, 8);
+    g.fillStyle = 'rgba(206,228,242,.075)'; g.fill();
+    const sh = g.createLinearGradient(0, 0, s.w, s.h);
+    sh.addColorStop(0, 'rgba(255,255,255,.07)'); sh.addColorStop(0.35, 'rgba(255,255,255,0)');
+    sh.addColorStop(0.62, 'rgba(255,255,255,.035)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = sh; g.fill();
+    g.strokeStyle = 'rgba(226,242,255,.18)'; g.lineWidth = 1; g.stroke();
+  },
+  paintPopped(b) {
+    const g = this.lg, pts = [];
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * TAU + rand(-0.2, 0.2), rr = b.r * rand(0.78, 1);
+      pts.push([b.x + Math.cos(a) * rr, b.y + Math.sin(a) * rr]);
+    }
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (const p of pts) g.lineTo(p[0], p[1]);
+    g.closePath();
+    g.fillStyle = 'rgba(226,242,255,.045)'; g.fill();
+    g.strokeStyle = 'rgba(226,242,255,.2)'; g.lineWidth = 0.9; g.stroke();
+    g.beginPath();
+    const creases = 2 + ((Math.random() * 2) | 0);
+    for (let i = 0; i < creases; i++) {
+      const a = rand(0, TAU), r1 = b.r * rand(0.5, 0.85), r2 = b.r * rand(0.5, 0.85);
+      g.moveTo(b.x + Math.cos(a) * r1, b.y + Math.sin(a) * r1);
+      g.lineTo(b.x + rand(-0.2, 0.2) * b.r, b.y + rand(-0.2, 0.2) * b.r);
+      g.lineTo(b.x + Math.cos(a + rand(2.4, 3.8)) * r2, b.y + Math.sin(a + rand(2.4, 3.8)) * r2);
+    }
+    g.strokeStyle = 'rgba(240,250,255,.24)'; g.lineWidth = 0.8; g.stroke();
+  },
+  find(x, y) {
+    const s = this.sheet, lx = x - s.x - this.slide, ly = y - s.y;
+    let best = null, bd = Infinity;
+    for (const b of this.bubbles) {
+      const d = (b.x - lx) * (b.x - lx) + (b.y - ly) * (b.y - ly);
+      if (d < bd) { bd = d; best = b; }
+    }
+    return best && bd < best.r * best.r * 0.95 ? best : null;
+  },
+  inSheet(p) { const s = this.sheet; return p.x > s.x && p.x < s.x + s.w && p.y > s.y && p.y < s.y + s.h; },
+
+  down(p) {
+    if (this.phase !== 'idle') return;
+    this.pressed = true; this.run = 0; this.batch = 0; this.lastHit = null; this.last = p;
+    this.hitAt(p.x, p.y);
+  },
+  move(p, pressed) {
+    if (!pressed || !this.pressed) { this.hover = this.phase === 'idle' ? this.find(p.x, p.y) : null; return; }
+    if (this.phase !== 'idle') { this.last = p; return; }
+    const dx = p.x - this.last.x, dy = p.y - this.last.y, dist = Math.hypot(dx, dy);
+    const n = Math.max(1, Math.ceil(dist / (this.sheet.r * 0.45)));
+    this.batch = 0;
+    for (let i = 1; i <= n && this.pressed; i++) this.hitAt(this.last.x + (dx * i) / n, this.last.y + (dy * i) / n);
+    if (dist > 1.5 && this.inSheet(p) && clock - this.crinkleAt > 0.045) {
+      this.crinkleAt = clock;
+      Sound.crinkle(panOf(p.x), clamp(dist / 25, 0, 1));
+    }
+    this.last = p;
+  },
+  up() {
+    if (!this.pressed) return;
+    this.pressed = false;
+    if (this.run > stats.bestRun) { stats.bestRun = this.run; save(); hud(); }
+    this.run = 0;
+  },
+  leave() { this.hover = null; },
+  exit() { this.pressed = false; this.hover = null; },
+
+  hitAt(x, y) {
+    const b = this.find(x, y);
+    if (!b) { this.lastHit = null; return; }
+    if (b === this.lastHit) return;
+    this.lastHit = b;
+    this.touch(b);
+  },
+  touch(b) {
+    if (b.popped) return;
+    const X = this.sheet.x + this.slide + b.x, Y = this.sheet.y + b.y;
+    if (b.dud && !b.squeaked) {
+      b.squeaked = true;
+      Sound.squeak(panOf(X));
+      addFx({ kind: 'ring', x: X, y: Y, r0: b.r * 0.6, r1: b.r * 1.05, life: 0.18 });
+      return;
+    }
+    b.popped = true; b.t = clock;
+    this.left--; this.run++; stats.popped++;
+    this.paintPopped(b);
+    Sound.pop(panOf(X), clamp((this.sheet.r - 11) / 15, 0, 1), this.batch * 0.009);
+    this.batch++;
+    addFx({ kind: 'ring', x: X, y: Y, r0: b.r * 0.8, r1: b.r * 1.6, life: 0.24 });
+    for (let i = 0; i < 3; i++) {
+      const a = rand(0, TAU), v = rand(40, 110);
+      addFx({ kind: 'speck', x: X, y: Y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.15, 0.3) });
+    }
+    if (pointerType === 'touch' && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+    save(); hud();
+    if (this.left <= 0) this.complete();
+  },
+  complete() {
+    stats.sheets++;
+    if (this.run > stats.bestRun) stats.bestRun = this.run;
+    save();
+    this.phase = 'done'; this.phaseT = 0; this.pressed = false; this.hover = null;
+    Sound.chime(0, [0, 4, 7, 12]);
+    toast(`Sheet ${stats.sheets} cleared · ${this.total} bubbles`);
+    hud();
+  },
+  key() {
+    if (this.phase !== 'idle') return;
+    const b = this.bubbles.find(b => !b.popped);
+    if (!b) return;
+    this.batch = 0; this.run = 0;
+    this.touch(b);
+  },
+
+  update(dt) {
+    const dist = this.LW + 160, dur = reduceMotion ? 0.25 : 0.8;
+    if (this.phase === 'done') {
+      this.phaseT += dt;
+      if (this.phaseT > 0.7) { this.phase = 'out'; this.phaseT = 0; Sound.rustle(0); }
+    } else if (this.phase === 'out') {
+      this.phaseT += dt / dur;
+      this.slide = -easeIn(Math.min(1, this.phaseT)) * dist;
+      if (this.phaseT >= 1) { this.kind++; this.phase = 'in'; this.build(); this.phaseT = 0; this.slide = dist; hud(); }
+    } else if (this.phase === 'in') {
+      this.phaseT += dt / dur;
+      this.slide = (1 - easeOut(Math.min(1, this.phaseT))) * dist;
+      if (this.phaseT >= 1) { this.phase = 'idle'; this.slide = 0; }
+    }
+  },
+  draw() {
+    const s = this.sheet, X = s.x + this.slide, Y = s.y, sp = this.sprite;
+    ctx.drawImage(this.layer, X, Y, s.w, s.h);
+    for (const b of this.bubbles) {
+      let k = b.r / s.r, sq = 1, a = 0.93;
+      if (b.popped) {
+        const p = (clock - b.t) / 0.09;
+        if (p >= 1) continue;
+        k *= 1 - 0.3 * p; a = 1 - p;
+      } else {
+        if (b.squeaked) sq = 0.8;
+        if (b === this.hover) a = 1;
+      }
+      ctx.globalAlpha = a;
+      const w = sp.half * 2 * k;
+      ctx.drawImage(sp.c, X + b.x - w / 2, Y + b.y - (w * sq) / 2 + (1 - sq) * b.r * 0.3, w, w * sq);
+    }
+    ctx.globalAlpha = 1;
+  },
+  statItems() { return [[stats.popped, 'popped'], [stats.sheets, 'sheets cleared'], [stats.bestRun, 'longest run']]; },
+  progress() { return ['Sheet', this.total ? 1 - this.left / this.total : 0]; }
+};
+
+/* ================= KINETIC SAND ================= */
+const Sand = {
+  name: 'sand', cursor: 'none',
+  label: 'Kinetic sand tray. Drag the blade down through the block to slice it.',
+  hint: 'Start at the top of the block and drag the blade straight down. Slices come off the left edge, and each one is measured in millimetres against the mat.',
+  LW: 0, LH: 0, G: 2,
+  flavors: [
+    { name: 'Lavender', bands: ['#b8a3e3'] },
+    { name: 'Sunset layers', bands: ['#f2ae8c', '#f3d38c', '#e893ad'] },
+    { name: 'Mint', bands: ['#96d6bb'] },
+    { name: 'Tide layers', bands: ['#84bbe4', '#a2ddd5', '#c2b3ee', '#efc0d3'] },
+    { name: 'Apricot', bands: ['#f0b394'] }
+  ],
+  fi: 0, phase: 'idle', phaseT: 0, slide: 0,
+
+  build() {
+    this.newBlock();
+    this.resetPile();
+    const b = this.block;
+    this.knife = { x: b.x0 + b.w * 0.18, y: b.top - 22, show: true };
+    this.slabs = []; this.grains = [];
+    this.cut = null; this.scar = null; this.auto = false;
+    this.pressed = false; this.vel = 0; this.prevDepth = 0;
+    this.phase = 'idle'; this.phaseT = 0; this.slide = 0;
+  },
+  newBlock() {
+    const LW = this.LW, LH = this.LH;
+    const bw = Math.round(Math.min(LW * 0.5, 430));
+    const bh = Math.round(clamp(Math.min(LH * 0.44, LW * 0.42), 110, 220));
+    this.floor = Math.round(Math.min(LH - 34, LH * 0.5 + bh * 0.5 + 24));
+    const x1 = Math.round(Math.min(LW - 26, LW * 0.5 + bw * 0.62));
+    this.block = { x0: x1 - bw, x1, left0: x1 - bw, top: this.floor - bh, h: bh, w: bw };
+    this.blockSlices = 0;
+    this.paintBlock();
+  },
+  paintBlock() {
+    const b = this.block, f = this.flavors[this.fi % this.flavors.length];
+    const [c, g] = layer(b.w, b.h);
+    this.tex = c; this.flavor = f;
+    const n = f.bands.length;
+    this.bands = [];
+    for (let k = 0; k < n; k++) {
+      const base = (b.h * k) / n;
+      const A1 = rand(2, 6), A2 = rand(1, 3), F1 = rand(0.01, 0.025), F2 = rand(0.04, 0.07), P1 = rand(0, TAU), P2 = rand(0, TAU);
+      const edge = k === 0 ? () => 0 : u => base + A1 * Math.sin(u * F1 + P1) + A2 * Math.sin(u * F2 + P2);
+      this.bands.push({ edge, rgb: hexRgb(f.bands[k]) });
+      g.fillStyle = f.bands[k];
+      g.beginPath(); g.moveTo(0, b.h);
+      for (let u = 0; u <= b.w + 3; u += 3) g.lineTo(u, edge(u));
+      g.lineTo(b.w + 3, b.h); g.closePath(); g.fill();
+    }
+    // grain speckle
+    const styles = [];
+    for (let i = 0; i < 5; i++) styles.push(`rgba(255,255,255,${(0.05 + i * 0.035).toFixed(3)})`, `rgba(40,20,50,${(0.05 + i * 0.03).toFixed(3)})`);
+    const count = Math.floor((b.w * b.h) / 4.5);
+    for (let i = 0; i < count; i++) {
+      g.fillStyle = styles[(Math.random() * styles.length) | 0];
+      const s = Math.random() < 0.8 ? 1 : 1.5;
+      g.fillRect(Math.random() * b.w, Math.random() * b.h, s, s);
+    }
+    const gr = g.createLinearGradient(0, 0, 0, b.h);
+    gr.addColorStop(0, 'rgba(255,255,255,.12)'); gr.addColorStop(0.15, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(30,14,40,.16)');
+    g.fillStyle = gr; g.fillRect(0, 0, b.w, b.h);
+    g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(0, 0, b.w, 3);
+    g.fillStyle = 'rgba(40,20,50,.05)';
+    for (let y = 8; y < b.h; y += rand(9, 22)) g.fillRect(0, y, b.w, 1);   // faint lines from the mould
+    this.shades = this.bands.map(bd => {
+      const out = [];
+      for (let i = 0; i < 6; i++) {
+        const m = 0.84 + i * 0.06;
+        out.push(`rgb(${Math.min(255, bd.rgb[0] * m) | 0},${Math.min(255, bd.rgb[1] * m) | 0},${Math.min(255, bd.rgb[2] * m) | 0})`);
+      }
+      return out;
+    });
+  },
+  grainColor(u, v) {
+    let k = this.bands.length - 1;
+    while (k > 0 && v < this.bands[k].edge(u)) k--;
+    const sh = this.shades[k];
+    return sh[(Math.random() * sh.length) | 0];
+  },
+  resetPile() {
+    this.cols = Math.ceil(this.LW / this.G) + 2;
+    this.pileH = new Uint16Array(this.cols);
+    [this.pile, this.pg] = layer(this.LW, this.LH);
+    this.pileAlpha = 1;
+  },
+
+  down(p) {
+    this.pressed = true; this.auto = false;
+    this.knife.x = p.x; this.knife.y = p.y; this.knife.show = true;
+    this.tryStart(p);
+  },
+  move(p, pressed) {
+    this.knife.x = p.x; this.knife.y = p.y; this.knife.show = true;
+    if (!pressed || !this.pressed || this.auto) return;
+    if (!this.cut) this.tryStart(p); else this.advance(p);
+  },
+  up() { this.pressed = false; if (this.cut && !this.auto) this.abort(); },
+  leave() { if (!this.pressed) this.knife.show = false; },
+  exit() { this.pressed = false; if (this.cut && !this.auto) this.abort(); Sound.silence(); },
+
+  maxSlice() { return Math.min(this.block.h * 0.45, 64); },
+  tryStart(p) {
+    const b = this.block;
+    if (this.phase !== 'idle' || b.x1 - b.x0 < 1) return;
+    if (p.x < b.x0 + 2 || p.x > b.x1 + 6 || p.y < b.top - 6 || p.y > b.top + b.h * 0.45) return;
+    let x = Math.min(p.x, b.x1, b.x0 + this.maxSlice());
+    if (b.x1 - x < 8) x = b.x1;
+    this.cut = { x, depth: clamp(p.y - b.top, 0, b.h) };
+    this.prevDepth = this.cut.depth;
+    Sound.grains(panOf(x), 3);
+  },
+  advance(p) {
+    const b = this.block;
+    if (p.y < b.top - 16) { this.abort(); return; }
+    const d = clamp(p.y - b.top, 0, b.h);
+    if (d > this.cut.depth) {
+      this.cut.depth = d;
+      if (d >= b.h - 0.5) this.finish();
+    }
+  },
+  abort() { this.scar = { x: this.cut.x, depth: this.cut.depth, life: 1.4 }; this.cut = null; },
+  finish() {
+    const b = this.block, x = this.cut.x, t = x - b.x0;
+    const mm = ((t * view.s) / CM) * 10;
+    this.slabs.push({
+      x0: b.x0, t, h: b.h, u0: b.x0 - b.left0, a: 0, time: 0, rest: 0, state: 'tip',
+      T: 0.34 * Math.sqrt(b.h / 180), aImp: this.impactAngle(b.x0, b.h)
+    });
+    b.x0 = x; this.cut = null; this.blockSlices++;
+    if (this.auto) { this.auto = false; this.knife.x = b.x0 + 10; this.knife.y = b.top - 22; }
+    stats.slices++;
+    if (!stats.thinnest || mm < stats.thinnest) stats.thinnest = Math.round(mm * 10) / 10;
+    addFx({ kind: 'text', x: x - t / 2, y: b.top - 12, vx: 0, vy: -18, text: mm.toFixed(1) + ' mm', life: 1.2 });
+    Sound.grains(panOf(x), 4);
+    save(); hud();
+    if (b.x1 - b.x0 < 1) {
+      this.phase = 'done'; this.phaseT = 0;
+      stats.blocks++; save();
+      Sound.chime(0, [0, 5, 9, 12]);
+      toast(`${this.flavor.name} block sliced · ${this.blockSlices} slices`);
+    }
+  },
+  impactAngle(x0, h) {
+    // the slab tips over its bottom-left corner and stops where it meets the pile
+    const G = this.G, c0 = Math.max(0, Math.floor((x0 - h) / G)), c1 = Math.max(0, Math.floor((x0 - h * 0.3) / G));
+    let m = 0;
+    for (let c = c0; c <= c1 && c < this.cols; c++) m = Math.max(m, this.pileH[c]);
+    return -Math.acos(clamp((m * G) / h, 0, 0.97));
+  },
+  land(s) {
+    const cx = s.x0 - s.h * 0.5;
+    Sound.thud(panOf(cx), clamp((s.t * s.h) / 9000, 0.12, 1));
+    const c = this.shades[0][2];
+    for (let i = 0; i < 6; i++) addFx({ kind: 'dust', x: cx + rand(-s.h * 0.4, s.h * 0.4), y: this.floor - rand(0, 6), vx: rand(-30, 30), vy: rand(-25, -5), r: rand(3, 7), c, life: rand(0.35, 0.6) });
+  },
+  crumble(s) {
+    const G = this.G, cos = Math.cos(s.a), sin = Math.sin(s.a);
+    let n = 0;
+    for (let v = 0; v < s.h; v += G) for (let u = 0; u < s.t; u += G) {
+      if (Math.random() > 0.5) continue;
+      const lx = u + G / 2, ly = -(v + G / 2);
+      this.grains.push({
+        x: s.x0 + lx * cos - ly * sin,
+        y: this.floor + lx * sin + ly * cos,
+        vx: rand(-18, 18) + (Math.random() < 0.15 ? rand(-60, 60) : 0),
+        vy: rand(-35, 5),
+        c: this.grainColor(s.u0 + u, s.h - v - G / 2)
+      });
+      n++;
+    }
+    Sound.crumble(panOf(s.x0 - s.h * 0.5), clamp(n / 600, 0.15, 1));
+  },
+  wallCol() { const b = this.block; return b.x1 - b.x0 > 0 ? Math.floor(b.x0 / this.G) - 1 : this.cols - 1; },
+  settle(c, color) {
+    const Hh = this.pileH, G = this.G, lim = Math.min(this.wallCol(), this.cols - 1);
+    if (lim < 0) return;
+    if (c > lim) c = lim;
+    for (let k = 0; k < 40; k++) {
+      const h = Hh[c];
+      const l = c > 0 ? Hh[c - 1] : 0, r = c < lim ? Hh[c + 1] : 65535;
+      const canL = l < h - 1, canR = r < h - 1;   // kinetic sand holds a steep slope before it slides
+      if (canL && canR) c += l < r || (l === r && Math.random() < 0.5) ? -1 : 1;
+      else if (canL) c--;
+      else if (canR) c++;
+      else break;
+      if (c < 0) return;   // rolled off the edge of the mat
+    }
+    if ((Hh[c] + 1) * G > this.floor - 12) return;
+    Hh[c]++;
+    this.pg.fillStyle = color;
+    this.pg.fillRect(c * G, this.floor - Hh[c] * G, G, G);
+  },
+  stepGrains(dt) {
+    const G = this.G, b = this.block, floor = this.floor, Hh = this.pileH, gs = this.grains;
+    const walled = b.x1 - b.x0 > 0, wall = b.x0 - 0.5, damp = Math.pow(0.2, dt);
+    for (let i = gs.length - 1; i >= 0; i--) {
+      const g = gs[i];
+      g.vy += 1400 * dt; g.vx *= damp;
+      g.x += g.vx * dt; g.y += g.vy * dt;
+      if (walled && g.x > wall && g.y > b.top) { g.x = wall - Math.random(); g.vx = -Math.abs(g.vx) * 0.3; }
+      const c = Math.floor(g.x / G);
+      let gone = c < 0 || c >= this.cols || g.y > this.LH + 20;
+      if (!gone && g.y >= floor - Hh[c] * G - G * 0.5) { this.settle(c, g.c); gone = true; }
+      if (gone) { gs[i] = gs[gs.length - 1]; gs.pop(); }
+    }
+  },
+  crumb() {
+    const b = this.block, sh = this.shades[0];
+    addFx({ kind: 'crumb', x: this.cut.x + rand(-3, 1), y: b.top + rand(-1, 2), vx: rand(-50, 30), vy: rand(-70, -20), g: 600, c: sh[(Math.random() * sh.length) | 0], life: rand(0.3, 0.6) });
+  },
+  key() {
+    const b = this.block;
+    if (this.phase !== 'idle' || this.cut || b.x1 - b.x0 < 1) return;
+    let x = Math.min(b.x1, b.x0 + rand(6, 18));
+    if (b.x1 - x < 8) x = b.x1;
+    this.cut = { x, depth: 0 }; this.prevDepth = 0; this.auto = true;
+    this.knife.show = true;
+  },
+
+  update(dt) {
+    const b = this.block;
+    if (this.auto && this.cut) {
+      this.cut.depth = Math.min(b.h, this.cut.depth + dt * 380);
+      if (this.cut.depth >= b.h - 0.5) this.finish();
+    }
+    if (this.cut) {
+      const dd = this.cut.depth - this.prevDepth;
+      this.prevDepth = this.cut.depth;
+      this.vel += (dd / Math.max(dt, 1e-3) - this.vel) * Math.min(1, dt * 20);
+      if (dd > 0 && Math.random() < dd * 0.25) this.crumb();
+    } else this.vel *= Math.pow(0.0005, dt);
+    Sound.sandCut(panOf(this.cut ? this.cut.x : this.knife.x), this.vel);
+
+    if (this.scar) { this.scar.life -= dt; if (this.scar.life <= 0) this.scar = null; }
+
+    for (let i = this.slabs.length - 1; i >= 0; i--) {
+      const s = this.slabs[i];
+      if (s.state === 'tip') {
+        s.time += dt;
+        const p = s.time / s.T;
+        s.a = -Math.PI / 2 * p * p;
+        if (s.a <= s.aImp) { s.a = s.aImp; s.state = 'rest'; this.land(s); }
+      } else {
+        s.rest += dt;
+        if (s.rest > 0.16) { this.crumble(s); this.slabs.splice(i, 1); }
+      }
+    }
+    this.stepGrains(dt);
+
+    if (this.phase === 'done') {
+      this.phaseT += dt;
+      if ((this.phaseT > 1.1 && !this.slabs.length && !this.grains.length) || this.phaseT > 4) {
+        this.phase = 'sweep'; this.phaseT = 0; Sound.sweep();
+      }
+    } else if (this.phase === 'sweep') {
+      this.phaseT += dt / (reduceMotion ? 0.3 : 0.7);
+      this.pileAlpha = 1 - Math.min(1, this.phaseT);
+      if (this.phaseT >= 1) {
+        this.fi++; this.newBlock(); this.resetPile(); this.grains.length = 0;
+        this.phase = 'in'; this.phaseT = 0; this.slide = this.LW - this.block.x0 + 40;
+        hud();
+      }
+    } else if (this.phase === 'in') {
+      this.phaseT += dt / (reduceMotion ? 0.3 : 0.9);
+      this.slide = (1 - easeOut(Math.min(1, this.phaseT))) * (this.LW - this.block.x0 + 40);
+      if (this.phaseT >= 1) { this.phase = 'idle'; this.slide = 0; }
+    }
+  },
+
+  drawBlock(sl, inner) {
+    const b = this.block, w = b.x1 - b.x0, X = b.x0 + sl;
+    if (w <= 0.5) return;
+    if (!inner) {
+      const sg = ctx.createLinearGradient(0, this.floor, 0, this.floor + 12);
+      sg.addColorStop(0, 'rgba(3,14,10,.42)'); sg.addColorStop(1, 'rgba(3,14,10,0)');
+      ctx.fillStyle = sg; ctx.fillRect(X - 3, this.floor, w + 10, 12);
+    }
+    const sx = (b.x0 - b.left0) * DPR, sw = Math.min(w * DPR, this.tex.width - sx);
+    if (sw > 0) ctx.drawImage(this.tex, sx, 0, sw, this.tex.height, X, b.top, sw / DPR, b.h);
+    if (b.x0 > b.left0 + 0.5) {
+      const cg = ctx.createLinearGradient(X, 0, X + 7, 0);
+      cg.addColorStop(0, 'rgba(34,14,44,.2)'); cg.addColorStop(1, 'rgba(34,14,44,0)');
+      ctx.fillStyle = cg; ctx.fillRect(X, b.top, Math.min(7, w), b.h);
+    }
+  },
+  drawSlab(s) {
+    ctx.save();
+    ctx.translate(s.x0, this.floor); ctx.rotate(s.a);
+    const sx = s.u0 * DPR, sw = Math.max(1, Math.min(s.t * DPR, this.tex.width - sx));
+    ctx.drawImage(this.tex, sx, 0, sw, this.tex.height, 0, -s.h, s.t, s.h);
+    ctx.fillStyle = 'rgba(34,14,44,.14)'; ctx.fillRect(s.t - 1.5, -s.h, 1.5, s.h);
+    ctx.restore();
+  },
+  cutLine(x, depth, a) {
+    const b = this.block;
+    ctx.strokeStyle = `rgba(28,12,36,${a.toFixed(3)})`; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x + 0.5, b.top); ctx.lineTo(x + 0.5, b.top + depth); ctx.stroke();
+  },
+  drawKnife() {
+    const k = this.knife;
+    if (!k.show) return;
+    const b = this.block;
+    let x = k.x, y = k.y;
+    if (this.cut) { x = this.cut.x; y = b.top + this.cut.depth; }
+    const L = b.h + 34, bw = 10, HL = 58;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(3,14,10,.2)';
+    ctx.fillRect(7, -L - HL, bw, L + HL - 10);
+    const gr = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
+    gr.addColorStop(0, '#eef3f5'); gr.addColorStop(0.45, '#bcc6cd'); gr.addColorStop(0.55, '#86929a'); gr.addColorStop(1, '#dfe6ea');
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.moveTo(-bw / 2, -L); ctx.lineTo(bw / 2, -L); ctx.lineTo(bw / 2, -bw * 0.7);
+    ctx.quadraticCurveTo(bw / 2, 0, 0, 0);
+    ctx.quadraticCurveTo(-bw / 2, 0, -bw / 2, -bw * 0.7);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(10,20,24,.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.fillStyle = '#c9d1d6'; roundRect(ctx, -bw / 2 - 2, -L - 7, bw + 4, 8, 2); ctx.fill();
+    const hg = ctx.createLinearGradient(-8, 0, 8, 0);
+    hg.addColorStop(0, '#4a3a31'); hg.addColorStop(0.4, '#6b5446'); hg.addColorStop(1, '#33271f');
+    ctx.fillStyle = hg; roundRect(ctx, -8, -L - 7 - HL, 16, HL, 6); ctx.fill();
+    ctx.fillStyle = 'rgba(230,220,210,.6)';
+    for (const f of [0.3, 0.7]) { ctx.beginPath(); ctx.arc(0, -L - 7 - HL * f, 1.6, 0, TAU); ctx.fill(); }
+    ctx.restore();
+    if (this.cut && this.cut.depth > 0) {
+      // the part of the blade inside the sand shows only faintly through it
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x - bw, b.top, bw * 2, this.cut.depth); ctx.clip();
+      ctx.globalAlpha = 0.78;
+      this.drawBlock(0, true);
+      ctx.restore();
+      this.cutLine(this.cut.x, this.cut.depth, 0.45);
+    }
+  },
+  draw() {
+    const b = this.block;
+    if (this.pileAlpha > 0) {
+      ctx.globalAlpha = this.pileAlpha;
+      ctx.drawImage(this.pile, 0, 0, this.LW, this.LH);
+      ctx.globalAlpha = 1;
+    }
+    this.drawBlock(this.slide, false);
+    if (this.scar && this.scar.x > b.x0) this.cutLine(this.scar.x, this.scar.depth, 0.4 * Math.min(1, this.scar.life));
+    if (this.cut) this.cutLine(this.cut.x, this.cut.depth, 0.45);
+    for (const s of this.slabs) this.drawSlab(s);
+    const G = this.G;
+    for (const g of this.grains) { ctx.fillStyle = g.c; ctx.fillRect(g.x - G / 2, g.y - G / 2, G, G); }
+    this.drawKnife();
+  },
+  statItems() {
+    return [[stats.slices, 'slices'], [stats.thinnest ? stats.thinnest.toFixed(1) + ' mm' : '–', 'thinnest slice'], [stats.blocks, 'blocks']];
+  },
+  progress() { const b = this.block; return ['Block', b ? 1 - (b.x1 - b.x0) / b.w : 0]; }
+};
+
+/* ================= SLIME ================= */
+const Slime = {
+  name: 'slime', cursor: 'grab',
+  label: 'Slime tray. Press and drag to knead, press on air pockets to pop them.',
+  hint: 'Press and drag to knead. Kneading traps little air pockets; press on them to pop them. Knead it to full gloss for the next batch.',
+  LW: 0, LH: 0,
+  flavors: [
+    { name: 'Lilac cloud', c: [196, 170, 238], glitter: false },
+    { name: 'Sky glass', c: [138, 194, 238], glitter: true },
+    { name: 'Mint frost', c: [142, 220, 188], glitter: false },
+    { name: 'Peach cream', c: [245, 182, 156], glitter: true },
+    { name: 'Butter', c: [240, 212, 136], glitter: false }
+  ],
+  fi: 0, gloss: 0, glossShown: 0, col: null, autoT: 0, acc: 0, energy: 0,
+
+  build() {
+    const LW = this.LW, LH = this.LH;
+    const rw = Math.min(LW - 32, 720), rh = Math.min(LH - 32, 470);
+    this.rx = (LW - rw) / 2; this.ry = (LH - rh) / 2; this.rw = rw; this.rh = rh;
+    const cell = this.cell = Math.max(3, Math.sqrt((rw * rh) / 22000));
+    const gw = this.gw = Math.ceil(rw / cell) + 1, gh = this.gh = Math.ceil(rh / cell) + 1, N = gw * gh;
+    this.h = new Float32Array(N); this.v = new Float32Array(N); this.lap = new Float32Array(N);
+    this.base = new Float32Array(N); this.mask = new Float32Array(N);
+    // the outline wobbles outward by up to 5%, so the blob is laid out 6% inside its box
+    const cx = rw / 2, cy = rh / 2, rad = Math.min(rw, rh) * 0.32;
+    const hx = (rw / 2 - 6) / 1.06 - rad, hy = (rh / 2 - 6) / 1.06 - rad;
+    const p1 = rand(0, TAU), p2 = rand(0, TAU), EDGE = Math.min(52, Math.min(rw, rh) * 0.16), THICK = 34;
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+      const px = i * cell - cx, py = j * cell - cy, a = Math.atan2(py, px);
+      const wob = 1 + 0.03 * Math.sin(a * 3 + p1) + 0.02 * Math.sin(a * 5 + p2);
+      const qx = Math.abs(px) / wob - hx, qy = Math.abs(py) / wob - hy;
+      const inside = -(Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rad);
+      const k = j * gw + i, e = clamp(inside / EDGE, 0, 1);
+      this.base[k] = THICK * (1 - (1 - e) * (1 - e));
+      this.mask[k] = clamp(inside / (cell * 1.3) + 0.5, 0, 1);
+    }
+    this.off = document.createElement('canvas');
+    this.off.width = gw; this.off.height = gh;
+    this.og = this.off.getContext('2d');
+    this.img = this.og.createImageData(gw, gh);
+
+    // soft contact shadow, drawn once
+    const [sc, sg] = layer(rw + 80, rh + 80);
+    sg.shadowColor = 'rgba(2,12,9,.6)'; sg.shadowBlur = 24 * DPR;
+    sg.shadowOffsetX = 10000 * DPR; sg.shadowOffsetY = 12 * DPR;
+    roundRect(sg, 48 - 10000, 44, rw - 16, rh - 8, rad);
+    sg.fillStyle = '#000'; sg.fill();
+    this.shadow = sc;
+
+    this.glit = [];
+    for (let n = 0; n < 340; n++) {
+      const k = (Math.random() * N) | 0;
+      if (this.mask[k] > 0.99 && this.base[k] > THICK * 0.6) this.glit.push({ k, tx: rand(-0.7, 0.7), ty: rand(-0.7, 0.7) });
+    }
+    this.pockets = [];
+    this.ptr = { x: LW / 2, y: LH / 2, down: false, on: false, speed: 0, acc: 0, dx: 1, dy: 0 };
+    this.press = 0; this.autoT = 0; this.acc = 0;
+    if (!this.col) this.col = this.flavors[this.fi % this.flavors.length].c.slice();
+    this.awake = 0.5;
+    this.light();
+  },
+  maskAt(x, y) {
+    const i = Math.round((x - this.rx) / this.cell), j = Math.round((y - this.ry) / this.cell);
+    if (i < 0 || j < 0 || i >= this.gw || j >= this.gh) return 0;
+    return this.mask[j * this.gw + i];
+  },
+  radius() { return pointerType === 'touch' ? 34 : 28; },
+
+  down(p) {
+    const q = this.ptr;
+    q.down = true; q.x = p.x; q.y = p.y; q.acc = 0;
+    q.on = this.maskAt(p.x, p.y) > 0.5;
+    canvas.style.cursor = 'grabbing';
+    if (q.on) { Sound.squish(panOf(p.x)); this.awake = 1; }
+  },
+  move(p, pressed) {
+    const q = this.ptr;
+    if (pressed && q.down) {
+      const dx = p.x - q.x, dy = p.y - q.y, d = Math.hypot(dx, dy);
+      if (d > 0.01) { q.dx = q.dx * 0.6 + (dx / d) * 0.4; q.dy = q.dy * 0.6 + (dy / d) * 0.4; }
+      const was = q.on;
+      q.on = this.maskAt(p.x, p.y) > 0.5;
+      if (q.on && !was) Sound.squish(panOf(p.x));
+      if (q.on) {
+        q.acc += d;
+        this.gloss = Math.min(1, this.gloss + d / (this.rw * 8));
+        if (this.pockets.length < 40 && Math.random() < d * 0.018) this.spawnPocket(q);
+        if (d > 0.5) hud();
+      }
+    }
+    q.x = p.x; q.y = p.y;
+  },
+  up() {
+    const q = this.ptr;
+    if (q.down && q.on) Sound.suction(panOf(q.x));
+    q.down = false; q.on = false;
+    canvas.style.cursor = 'grab';
+  },
+  exit() { this.ptr.down = false; this.ptr.on = false; this.autoT = 0; Sound.silence(); },
+  spawnPocket(q) {
+    const R = this.radius(), a = Math.atan2(-q.dy, -q.dx) + rand(-1.2, 1.2), dist = R * rand(1.25, 1.9);
+    const x = q.x + Math.cos(a) * dist, y = q.y + Math.sin(a) * dist;
+    if (this.maskAt(x, y) > 0.95) this.pockets.push({ x, y, r: rand(2.5, 6.5), t: 0 });
+  },
+  popPockets() {
+    const q = this.ptr, R = this.radius() * 0.8;
+    for (let i = this.pockets.length - 1; i >= 0; i--) {
+      const p = this.pockets[i];
+      if (p.t < 0.25) continue;
+      if ((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y) < R * R) {
+        this.pockets.splice(i, 1);
+        Sound.click(panOf(p.x), rand(0.9, 1.2));
+        addFx({ kind: 'ring', x: p.x, y: p.y, r0: p.r, r1: p.r * 2.6, life: 0.22 });
+        stats.pockets++;
+        this.gloss = Math.min(1, this.gloss + 0.006);
+        save(); hud();
+      }
+    }
+  },
+  key() {
+    if (this.autoT > 0) return;
+    let x = this.rx + this.rw / 2, y = this.ry + this.rh / 2;
+    for (let n = 0; n < 20; n++) {
+      const tx = this.rx + rand(0.25, 0.75) * this.rw, ty = this.ry + rand(0.25, 0.75) * this.rh;
+      if (this.maskAt(tx, ty) > 0.9) { x = tx; y = ty; break; }
+    }
+    this.auto = { x, y, a: rand(0, TAU) };
+    this.autoT = 0.7;
+    this.down({ x, y });
+  },
+  complete() {
+    stats.batches++; save();
+    const done = this.flavors[this.fi % this.flavors.length];
+    this.fi++;
+    const next = this.flavors[this.fi % this.flavors.length];
+    this.gloss = 0;
+    this.pockets.length = 0;
+    this.awake = 2.5;
+    Sound.chime(0, [0, 4, 7, 11]);
+    toast(`${done.name} is glossy · next batch: ${next.name}`);
+    hud();
+  },
+
+  pressField(x, y, dx, dy) {
+    const { gw, gh, cell, h, v, mask } = this;
+    const gx = (x - this.rx) / cell, gy = (y - this.ry) / cell;
+    const R = this.radius() / cell, R2 = R * 2.2, depth = -24 * this.press;
+    const i0 = Math.max(1, Math.floor(gx - R2)), i1 = Math.min(gw - 2, Math.ceil(gx + R2));
+    const j0 = Math.max(1, Math.floor(gy - R2)), j1 = Math.min(gh - 2, Math.ceil(gy + R2));
+    const ringW = (ex, ey, d) => Math.sin((Math.PI * (d - 1)) / 1.2) * (1 + 0.9 * Math.max(-0.8, (ex * dx + ey * dy) / (d * R)));
+    let removed = 0, wsum = 0;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = j * gw + i;
+      if (mask[k] < 0.5) continue;
+      const ex = i - gx, ey = j - gy, d = Math.sqrt(ex * ex + ey * ey) / R;
+      if (d < 1) {
+        const f = 1 - d * d, target = depth * f * f;
+        if (h[k] > target) { const dv = (target - h[k]) * 0.3; h[k] += dv; v[k] *= 0.6; removed -= dv; }
+      } else if (d < 2.2) wsum += ringW(ex, ey, d);
+    }
+    if (removed <= 0 || wsum <= 0) return;
+    // the slime pushed out from under the finger piles up around it, more so ahead of the motion
+    const amt = (removed * 0.94) / wsum;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = j * gw + i;
+      if (mask[k] < 0.5) continue;
+      const ex = i - gx, ey = j - gy, d = Math.sqrt(ex * ex + ey * ey) / R;
+      if (d >= 1 && d < 2.2) h[k] += amt * ringW(ex, ey, d);
+    }
+  },
+  step() {
+    const { gw, gh, h, v, mask } = this, L = this.lap;
+    let mv = 0;
+    for (let j = 1; j < gh - 1; j++) {
+      let k = j * gw + 1;
+      for (let i = 1; i < gw - 1; i++, k++) {
+        if (mask[k] <= 0) continue;
+        const lap = (h[k - 1] + h[k + 1] + h[k - gw] + h[k + gw]) * 0.25 - h[k];
+        const nv = v[k] * 0.88 + lap * 0.2 - h[k] * 0.003;
+        v[k] = nv; L[k] = lap;
+        const a = nv < 0 ? -nv : nv;
+        if (a > mv) mv = a;
+      }
+    }
+    // a little viscosity smooths out grid-sized ripples
+    for (let k = 0; k < h.length; k++) if (mask[k] > 0) h[k] += v[k] + L[k] * 0.12;
+    this.energy = mv;
+  },
+  light() {
+    const { gw, gh, h, base, mask } = this, d = this.img.data, inv = 1 / (2 * this.cell);
+    const cr = this.col[0], cg = this.col[1], cb = this.col[2];
+    const gl = this.glossShown, shin = 14 + gl * 80, sA = 0.35 + gl * 0.65;
+    const Lx = -0.45, Ly = -0.6, Lz = 0.66;
+    let Hx = Lx, Hy = Ly, Hz = Lz + 1;
+    const hl = Math.hypot(Hx, Hy, Hz); Hx /= hl; Hy /= hl; Hz /= hl;
+    for (let j = 0; j < gh; j++) {
+      for (let i = 0; i < gw; i++) {
+        const k = j * gw + i, p = k * 4, m = mask[k];
+        if (m <= 0) { d[p + 3] = 0; continue; }
+        const kl = i > 0 ? k - 1 : k, kr = i < gw - 1 ? k + 1 : k, ku = j > 0 ? k - gw : k, kd = j < gh - 1 ? k + gw : k;
+        let nx = (base[kl] + h[kl] - base[kr] - h[kr]) * inv, ny = (base[ku] + h[ku] - base[kd] - h[kd]) * inv;
+        const il = 1 / Math.sqrt(nx * nx + ny * ny + 1);
+        nx *= il; ny *= il; const nz = il;
+        const dif = Math.max(0, nx * Lx + ny * Ly + nz * Lz);
+        const nh = Math.max(0, nx * Hx + ny * Hy + nz * Hz);
+        const spec = Math.pow(nh, shin) * sA + nh * nh * nh * nh * 0.06;
+        const fill = Math.max(0, nx * 0.5 + ny * 0.35 + nz * 0.4) * 0.14;
+        const dent = h[k] < 0 ? Math.min(1, -h[k] / 26) * 0.14 : 0;
+        const sh = 0.46 + 0.62 * dif + fill - dent, s = 255 * spec;
+        d[p] = cr * sh + s; d[p + 1] = cg * sh + s; d[p + 2] = cb * sh + s + fill * 30; d[p + 3] = m * 255;
+      }
+    }
+    if (this.flavors[this.fi % this.flavors.length].glitter) {
+      for (const g of this.glit) {
+        const k = g.k, i = k % gw;
+        if (i < 1 || i > gw - 2 || k < gw || k >= h.length - gw) continue;
+        let nx = (base[k - 1] + h[k - 1] - base[k + 1] - h[k + 1]) * inv + g.tx;
+        let ny = (base[k - gw] + h[k - gw] - base[k + gw] - h[k + gw]) * inv + g.ty;
+        const il = 1 / Math.sqrt(nx * nx + ny * ny + 1);
+        const s = Math.pow(Math.max(0, (nx * Hx + ny * Hy + Hz) * il), 90) * 330;
+        const p = k * 4;
+        d[p] += s; d[p + 1] += s; d[p + 2] += s;
+      }
+    }
+    this.og.putImageData(this.img, 0, 0);
+  },
+
+  update(dt) {
+    const q = this.ptr, target = this.flavors[this.fi % this.flavors.length].c;
+    let changing = false;
+    for (let c = 0; c < 3; c++) {
+      const d = target[c] - this.col[c];
+      if (Math.abs(d) > 0.5) { this.col[c] += d * Math.min(1, dt * 2.2); changing = true; } else this.col[c] = target[c];
+    }
+    const gd = this.gloss - this.glossShown;
+    if (Math.abs(gd) > 0.002) { this.glossShown += gd * Math.min(1, dt * 3); changing = true; }
+
+    if (this.autoT > 0) {
+      this.autoT -= dt;
+      const A = this.auto;
+      A.a += dt * 7;
+      this.move({ x: A.x + Math.cos(A.a) * 22, y: A.y + Math.sin(A.a) * 14 }, true);
+      if (this.autoT <= 0) this.up();
+    }
+
+    this.press = q.down && q.on ? Math.min(1, this.press + dt * 7) : Math.max(0, this.press - dt * 6);
+    const inst = q.acc / Math.max(dt, 1e-3);
+    q.acc = 0;
+    q.speed += (inst - q.speed) * Math.min(1, dt * 10);
+    if (this.press > 0) { this.pressField(q.x, q.y, q.dx, q.dy); this.awake = 1; if (q.down) this.popPockets(); }
+
+    if (this.awake > 0 || changing) {
+      this.acc += dt;
+      let n = 0;
+      while (this.acc >= 1 / 60 && n < 3) { this.step(); this.acc -= 1 / 60; n++; }
+      if (n === 3) this.acc = 0;
+      this.light();
+      if (this.press <= 0 && this.energy < 0.002) this.awake -= dt;
+    }
+
+    const pan = panOf(q.x);
+    if (q.down && q.on) {
+      Sound.slimeMove(pan, q.speed, this.press);
+      if (Math.random() < dt * Math.min(14, q.speed / 140)) Sound.click(pan, rand(0.2, 0.6));
+    } else Sound.slimeMove(pan, 0, 0);
+
+    for (const p of this.pockets) p.t += dt;
+    if (this.gloss >= 1) this.complete();
+  },
+  draw() {
+    ctx.drawImage(this.shadow, this.rx - 40, this.ry - 40, this.rw + 80, this.rh + 80);
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
+    const c = this.cell;
+    ctx.drawImage(this.off, this.rx - c / 2, this.ry - c / 2, this.gw * c, this.gh * c);
+    for (const p of this.pockets) {
+      const a = Math.min(1, p.t / 0.25), r = p.r * (0.4 + 0.6 * a);
+      ctx.globalAlpha = 0.9 * a;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU);
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 0.9; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x - r * 0.35, p.y - r * 0.35, r * 0.3, 0, TAU);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  },
+  statItems() {
+    return [[stats.pockets, 'air pockets popped'], [stats.batches, 'batches kneaded'], [this.flavors[this.fi % this.flavors.length].name, 'in the tray']];
+  },
+  progress() { return ['Gloss', this.gloss]; }
+};
+
+/* ---------- wiring ---------- */
+const trays = { wrap: Wrap, sand: Sand, slime: Slime };
+
+function fit(t) {
+  if (!W || !H) return;
+  let s = t.LW ? Math.min(W / t.LW, H / t.LH) : 0;
+  if (!t.LW || s < 0.82 || s > 1.2 || W - t.LW * s > 100 || H - t.LH * s > 100) {
+    t.LW = W; t.LH = H; t.build(); s = 1;
+  }
+  view.s = s; view.ox = (W - t.LW * s) / 2; view.oy = (H - t.LH * s) / 2;
+}
+function resize() {
+  const r = stage.getBoundingClientRect();
+  const nw = Math.max(1, Math.round(r.width)), nh = Math.max(1, Math.round(r.height));
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  if (nw === W && nh === H && canvas.width === Math.round(W * DPR)) return;
+  W = nw; H = nh;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  drawMat();
+  if (current) fit(current);
+}
+
+let hudDirty = true;
+function hud() { hudDirty = true; }
+function renderHud() {
+  hudDirty = false;
+  if (!current) return;
+  $stats.innerHTML = current.statItems().map(([v, l]) => `<span class="stat"><b>${v}</b>${l}</span>`).join('');
+  const [lab, val] = current.progress(), pct = Math.floor(clamp(val, 0, 1) * 100);
+  $meterLabel.textContent = lab;
+  $meterFill.style.width = pct + '%';
+  $meterVal.textContent = pct + '%';
+}
+
+let toastTimer = 0;
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $toast.classList.remove('show'), 2600);
+}
+
+let activePointer = null;
+function select(name) {
+  const t = trays[name] || Wrap;
+  if (current && current !== t) current.exit();
+  current = t; fx = []; activePointer = null;
+  for (const b of tabs) b.setAttribute('aria-pressed', String(b.dataset.tray === t.name));
+  canvas.setAttribute('aria-label', t.label);
+  canvas.style.cursor = t.cursor;
+  $hint.textContent = t.hint;
+  fit(t);
+  hud();
+  remember('tray', t.name);
+}
+function wake() {
+  Sound.start();
+  if ($ear) $ear.hidden = true;
+}
+
+function toWorld(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left - view.ox) / view.s, y: (e.clientY - r.top - view.oy) / view.s };
+}
+canvas.addEventListener('pointerdown', e => {
+  if (activePointer !== null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  activePointer = e.pointerId; pointerType = e.pointerType || 'mouse';
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  e.preventDefault();
+  wake();
+  current.down(toWorld(e));
+});
+canvas.addEventListener('pointermove', e => {
+  if (activePointer !== null && e.pointerId !== activePointer) return;
+  pointerType = e.pointerType || pointerType;
+  const pressed = activePointer !== null;
+  const list = pressed && e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+  if (list && list.length > 1) for (const ce of list) current.move(toWorld(ce), true);
+  else current.move(toWorld(e), pressed);
+});
+const release = e => {
+  if (e.pointerId !== activePointer) return;
+  activePointer = null;
+  current.up(toWorld(e));
+};
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+canvas.addEventListener('lostpointercapture', release);
+canvas.addEventListener('pointerleave', () => { if (activePointer === null && current.leave) current.leave(); });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); wake(); current.key(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const map = { 1: 'wrap', 2: 'sand', 3: 'slime' };
+  if (map[e.key]) { select(map[e.key]); wake(); }
+  else if (e.key === 'm' || e.key === 'M') $sound.click();
+  else if (e.key === 'r' || e.key === 'R') $rain.click();
+});
+
+for (const b of tabs) b.addEventListener('click', () => { wake(); select(b.dataset.tray); });
+$sound.addEventListener('click', () => {
+  const on = $sound.getAttribute('aria-pressed') !== 'true';
+  $sound.setAttribute('aria-pressed', String(on));
+  wake();
+  Sound.setMuted(!on);
+  remember('muted', on ? '0' : '1');
+});
+$rain.addEventListener('click', () => {
+  const on = $rain.getAttribute('aria-pressed') !== 'true';
+  $rain.setAttribute('aria-pressed', String(on));
+  wake();
+  Sound.setRain(on);
+});
+document.addEventListener('visibilitychange', () => {
+  if (!Sound.ac) return;
+  if (document.hidden) Sound.ac.suspend().catch(() => {});
+  else Sound.ac.resume().catch(() => {});
+});
+
+let last = 0;
+function frame(now) {
+  const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+  last = now; clock += dt;
+  current.update(dt);
+  updateFx(dt);
+  Sound.tick(dt);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(mat, 0, 0);
+  ctx.setTransform(DPR * view.s, 0, 0, DPR * view.s, DPR * view.ox, DPR * view.oy);
+  current.draw();
+  drawFx();
+  if (hudDirty) renderHud();
+  requestAnimationFrame(frame);
+}
+
+let started = false;
+function start(data) {
+  if (started) return;
+  started = true;
+  if (recall('muted') === '1') { Sound.muted = true; $sound.setAttribute('aria-pressed', 'false'); }
+  resize();
+  const saved = (data && data.tray) || recall('tray');
+  select(trays[saved] ? saved : 'wrap');
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+  else window.addEventListener('resize', resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (W) drawMat(); });
+  requestAnimationFrame(frame);
+}
+
+const hot = window.claude && window.claude.hot;
+if (hot && typeof hot.snapshot === 'function') { try { hot.snapshot(() => ({ tray: current ? current.name : 'wrap' })); } catch (e) {} }
+if (hot && typeof hot.ready === 'function') hot.ready(start);
+else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>
