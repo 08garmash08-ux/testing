@@ -1,8 +1,9 @@
-// ChatGPT cup — a 3D-printable drinking cup with a raised six-link knot
-// emblem and "ChatGPT" label on the front.
+// ChatGPT cup — a 3D-printable drinking cup with the ChatGPT logo and a
+// "ChatGPT" label standing out on the front.
 //
-// Open in OpenSCAD, tweak the parameters below, then Render (F6) and
-// export an STL. All sizes are in millimetres.
+// Open in OpenSCAD, tweak the parameters below, then Render (F6) and export.
+// `python3 build_3mf.py` renders the cup and the logo as separate parts and
+// packs them into a two-colour chatgpt_cup.3mf. All sizes are in millimetres.
 
 /* [Cup] */
 height        = 100;  // height of the straight wall (the rounded rim adds wall/2)
@@ -13,14 +14,19 @@ floor_thick   = 3;    // bottom thickness
 floor_fillet  = 5;    // rounded inside corner between floor and wall
 base_chamfer  = 0.8;  // small outer chamfer that hides elephant's foot
 
-/* [Emblem] */
-logo_size     = 46;   // width of the knot emblem
-logo_z        = 60;   // height of the emblem centre
+/* [Logo] */
+logo_size     = 46;   // width of the logo
+logo_z        = 60;   // height of the logo centre
 label         = "ChatGPT";
 label_size    = 8.5;
 label_z       = 22;   // height of the label centre
 label_font    = "Liberation Sans:style=Bold";
-emboss        = 1.2;  // how far the emblem and label stand off the wall
+emboss        = 1.2;  // how far the logo and label stand off the wall
+
+/* [Output] */
+part          = "all";  // [all, body, logo]
+cup_color     = "#1e303d";  // preview colours; the 3MF uses the same two
+logo_color    = "white";
 
 /* [Quality] */
 $fn = 160;
@@ -53,47 +59,27 @@ module profile() {
 
 module cup_body()   { rotate_extrude() profile(); }
 
-// Everything the drink occupies, used to keep the emboss out of it.
+// The drink space grown halfway into the wall, used to trim the logo back
+// to the outside of the cup without leaving slivers on the inner wall.
 module cavity() {
     translate([0, 0, floor_thick])
-        cylinder(h = height + wall, r1 = r_in(floor_thick), r2 = r_in(height + wall));
+        cylinder(h = height,
+                 r1 = r_in(floor_thick) + wall / 2,
+                 r2 = r_in(floor_thick + height) + wall / 2);
 }
 
-// Outer skin pushed out by `emboss`: the emblem is clipped to this so its
+// Outer skin pushed out by `emboss`: the logo is clipped to this so its
 // face follows the curve and taper of the cup.
 module emboss_skin() {
     cylinder(h = height, r1 = bottom_radius + emboss, r2 = top_radius + emboss);
 }
 
-// ------------------------------------------------------------------ emblem
+// -------------------------------------------------------------------- logo
 
-// Six rounded chain links rotated 60° apart around a common centre.
-link_len    = 20;
-link_width  = 9;
-link_stroke = 2.2;
-link_offset = 4.2;
-link_tilt   = 30;
-
-module stadium(l, w) {
-    hull() {
-        translate([-(l - w) / 2, 0]) circle(d = w, $fn = 64);
-        translate([ (l - w) / 2, 0]) circle(d = w, $fn = 64);
-    }
-}
-
-module link() {
-    difference() {
-        stadium(link_len, link_width);
-        stadium(link_len - 2 * link_stroke, link_width - 2 * link_stroke);
-    }
-}
-
-module knot_2d() {
+// The ChatGPT logo, traced in chatgpt_logo.svg (24 × 24 viewBox).
+module logo_2d() {
     resize([logo_size, 0], auto = true)
-        for (i = [0 : 5])
-            rotate(i * 60) translate([link_offset, 0])
-                rotate(90 + link_tilt)
-                    translate([link_len / 2 - link_width / 2 - 1, 0]) link();
+        import("chatgpt_logo.svg", center = true);
 }
 
 module label_2d() {
@@ -107,22 +93,27 @@ module through_front(z) {
         linear_extrude(height = top_radius + emboss + 5) children();
 }
 
-module emblem() {
+// Only the raised part that sits on the outside of the wall, so the logo
+// and the body are separate solids that just touch.
+module logo_part() {
     difference() {
         intersection() {
             emboss_skin();
             union() {
-                through_front(logo_z) knot_2d();
+                through_front(logo_z) logo_2d();
                 if (label != "") through_front(label_z) label_2d();
             }
         }
+        cup_body();
         cavity();
     }
 }
 
 // -------------------------------------------------------------------- cup
 
-union() {
-    cup_body();
-    emblem();
+if (part == "body") cup_body();
+else if (part == "logo") logo_part();
+else {
+    color(cup_color) cup_body();
+    color(logo_color) logo_part();
 }
