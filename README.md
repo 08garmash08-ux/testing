@@ -46,3 +46,21 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+---
+
+# Drawing YouTube like a pro
+
+`youtube-drawing.html` is a time-lapse animation: a hand draws the YouTube logo stroke by stroke, the way an illustrator works.
+
+1. **Block in proportions**: light pencil box, centre lines and lettering guides, with the loose overshooting lines pros use.
+2. **Refine the shapes**: rounded corners, the play triangle and the letter skeletons.
+3. **Outline the icon**: one confident red fineliner line.
+4. **Marker fill**: two zigzag passes crossing each other, then a clean-up pass along the edges.
+5. **Letter the wordmark**: brush pen, one letter at a time.
+6. **Erase the guides**: the eraser scrubs out every construction line and leaves crumbs behind.
+7. **Sign it**, step back, done.
+
+The hand lifts between strokes, and its shadow touches the paper only when the tip is down. Strokes slow down at the ends and wobble slightly, so every **Replay** comes out a little different. Controls: Replay, Pause (or Space), and 1× / 2× / 4× speed. On narrow screens the icon stacks above the wordmark. With reduced motion turned on, the page shows the finished drawing straight away.
+
+Open the file directly in a browser. It needs no camera and no server. `?t=30` jumps to 30 s into the drawing, and `?seed=7` replays the same hand.

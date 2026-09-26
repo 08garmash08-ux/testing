@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawing YouTube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0e0f12;
+    --panel:#16181d;
+    --line:#2a2d35;
+    --txt:#eceef2;
+    --dim:#9398a5;
+    --red:#ff2a2a;
+    --mat:#21453d;
+    --grid:rgba(255,255,255,.07);
+    --grid2:rgba(255,255,255,.15);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);color:var(--txt);min-height:100vh;
+    font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 44px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;margin-bottom:14px}
+  h1{margin:0;font:700 clamp(32px,5.4vw,46px)/1 Caveat,cursive}
+  h1 em{font-style:normal;color:var(--red)}
+  .sub{color:var(--dim);font-size:13px}
+
+  /* the desk: a green cutting mat seen from above */
+  .stage{
+    position:relative;width:100%;aspect-ratio:var(--ar,1200/720);
+    border-radius:14px;overflow:hidden;isolation:isolate;
+    background-color:var(--mat);
+    background-image:
+      radial-gradient(120% 90% at 25% 15%, rgba(255,255,255,.07), transparent 60%),
+      linear-gradient(var(--grid2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:100% 100%, 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #cShadow{opacity:.3}
+
+  .hud{position:absolute;left:10px;top:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+  .chip{
+    background:rgba(14,15,18,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 12px 5px 10px;
+    font-size:12px;line-height:1.3;white-space:nowrap;display:flex;align-items:center;gap:8px;
+  }
+  .chip b{font:700 18px/1 Caveat,cursive;letter-spacing:.01em}
+  .chip small{color:var(--dim);font-size:11px}
+  .num{color:var(--dim);font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.08em}
+  .rec{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1.2s steps(2,start) infinite}
+  .rec.off{animation:none;background:#5b606c;box-shadow:none}
+  @keyframes blink{to{visibility:hidden}}
+  #clock{font-variant-numeric:tabular-nums;font-weight:600}
+
+  .bar{height:4px;background:rgba(255,255,255,.08);border-radius:99px;margin-top:12px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--red);border-radius:99px}
+
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+  button{
+    font:600 14px/1 Inter,system-ui,sans-serif;color:var(--txt);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 16px;
+    transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:#4a4f5c}
+  button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  button.primary{background:var(--red);border-color:var(--red);color:#fff}
+  button.primary:hover{background:#ff4343}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:0;border-radius:0;padding:11px 13px;background:var(--panel)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:#2a2e38;color:#fff}
+  .spacer{flex:1}
+  .hint{color:var(--dim);font-size:12px}
+
+  ol.steps{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  ol.steps li{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+    color:var(--dim);font-size:12px;line-height:1.35;transition:border-color .2s,color .2s;
+  }
+  ol.steps li b{display:block;color:var(--txt);font-weight:600;font-size:13px;margin-bottom:2px;opacity:.55}
+  ol.steps li.now{border-color:var(--red);color:var(--txt)}
+  ol.steps li.now b,ol.steps li.done b{opacity:1}
+  ol.steps li.done b::after{content:" ✓";color:var(--red)}
+
+  @media (max-width:560px){
+    .chip small{display:none}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){ .rec{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Drawing <em>YouTube</em> like a pro</h1>
+    <div class="sub">Time-lapse, drawn stroke by stroke by hand: pencil, fineliner, marker, brush pen</div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cPaper"></canvas>
+    <canvas id="cSketch"></canvas>
+    <canvas id="cInk"></canvas>
+    <canvas id="cActive"></canvas>
+    <canvas id="cShadow"></canvas>
+    <canvas id="cHand"></canvas>
+    <div class="hud">
+      <div class="chip"><span class="num" id="stepNum">1/7</span><b id="stepName">Block in proportions</b><small id="stepTool">HB pencil</small></div>
+      <div class="chip"><span class="rec" id="rec"></span><span id="clock">00:00</span><small>real time</small></div>
+    </div>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+
+  <div class="controls">
+    <button class="primary" id="btnReplay">Replay</button>
+    <button id="btnPause">Pause</button>
+    <div class="seg" role="group" aria-label="Playback speed">
+      <button data-speed="1" aria-pressed="true">1×</button>
+      <button data-speed="2" aria-pressed="false">2×</button>
+      <button data-speed="4" aria-pressed="false">4×</button>
+    </div>
+    <span class="spacer"></span>
+    <span class="hint">Space pauses · every replay is drawn a little differently, like a real hand</span>
+  </div>
+
+  <ol class="steps" id="steps"></ol>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ================= steps ================= */
+  const STEPS = [
+    {name:'Block in proportions', tool:'HB pencil, light', note:'Box, centre lines and lettering guides. Overshoot the ends, keep it loose.'},
+    {name:'Refine the shapes',    tool:'HB pencil',        note:'Round the corners, place the play triangle, sketch the letters.'},
+    {name:'Outline the icon',     tool:'red fineliner',    note:'One confident line around the icon and the triangle.'},
+    {name:'Marker fill',          tool:'red marker',       note:'Two cross-hatched passes so the red goes solid.'},
+    {name:'Letter the wordmark',  tool:'brush pen',        note:'Each letter in as few strokes as possible.'},
+    {name:'Erase the guides',     tool:'eraser',           note:'Scrub out every construction line.'},
+    {name:'Sign it',              tool:'black fineliner',  note:'A quick signature, then step back.'},
+  ];
+  const TIMELAPSE = 21;   // one second of playback = 21 s of "real" drawing time
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage');
+  const mk = id => { const c = $(id); return {c, g:c.getContext('2d')}; };
+  const PA = mk('cPaper'), SK = mk('cSketch'), IN = mk('cInk'), AC = mk('cActive'), SH = mk('cShadow'), HA = mk('cHand');
+  const ALL = [PA, SK, IN, AC, SH, HA];
+
+  /* ================= random + noise ================= */
+  function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  let rnd = Math.random;
+  const R = (a, b) => a + (b - a) * rnd();
+  function noise1(){
+    const r = mulberry32((rnd() * 1e9) | 0), tab = Array.from({length:256}, () => r() * 2 - 1);
+    return x => { const i = Math.floor(x), f = x - i, s = f * f * (3 - 2 * f); return tab[i & 255] + (tab[(i + 1) & 255] - tab[i & 255]) * s; };
+  }
+
+  /* ================= geometry ================= */
+  const P = (x, y) => ({x, y});
+  const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+  const lerpP = (a, b, t) => P(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const smooth = t => t * t * (3 - 2 * t);
+
+  function line(a, b, o0 = 0, o1 = o0){
+    const d = dist(a, b) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d;
+    return [P(a.x - ux * o0, a.y - uy * o0), P(b.x + ux * o1, b.y + uy * o1)];
+  }
+  function arc(cx, cy, rx, ry, t0, t1, n = Math.max(6, Math.ceil(Math.abs(t1 - t0) * Math.max(rx, ry) / 3))){
+    const out = [];
+    for(let i = 0; i <= n; i++){ const t = t0 + (t1 - t0) * i / n; out.push(P(cx + rx * Math.cos(t), cy + ry * Math.sin(t))); }
+    return out;
+  }
+  function resample(pts, step){
+    const out = [pts[0]]; let acc = 0;
+    for(let i = 1; i < pts.length; i++){
+      let a = pts[i - 1]; const b = pts[i]; let d = dist(a, b);
+      while(acc + d >= step){ const p = lerpP(a, b, (step - acc) / d); out.push(p); a = p; d = dist(a, b); acc = 0; }
+      acc += d;
+    }
+    if(dist(out[out.length - 1], pts[pts.length - 1]) > .3) out.push(pts[pts.length - 1]);
+    return out;
+  }
+  // wobble a path sideways the way a real hand does: slow drift plus a little tremor
+  function wobble(pts, amp){
+    const drift = noise1(), trem = noise1(); let s = 0;
+    return pts.map((p, i) => {
+      if(i) s += dist(pts[i - 1], p);
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], d = dist(a, b) || 1;
+      const off = amp * (drift(s / 70) + .25 * trem(s / 9));
+      return P(p.x - (b.y - a.y) / d * off, p.y + (b.x - a.x) / d * off);
+    });
+  }
+  // eraser scrub: follow a path while rubbing side to side
+  function scrub(pts, amp, wl){
+    const q = resample(pts, 2); let s = 0;
+    return q.map((p, i) => {
+      if(i) s += dist(q[i - 1], p);
+      const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], d = dist(a, b) || 1;
+      const off = amp * Math.sin(s / wl * Math.PI * 2);
+      return P(p.x - (b.y - a.y) / d * off, p.y + (b.x - a.x) / d * off);
+    });
+  }
+  // Catmull-Rom through points -> dense polyline
+  function spline(pts, per = 10){
+    const out = [];
+    for(let i = 0; i < pts.length - 1; i++){
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      for(let j = 0; j < per; j++){
+        const t = j / per, t2 = t * t, t3 = t2 * t;
+        out.push(P(
+          .5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+          .5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3)));
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  /* ================= layout ================= */
+  // Everything is drawn in "paper" units. Wide screens get the classic icon-left layout,
+  // narrow screens get the icon stacked over the wordmark.
+  const LETTERS = {
+    // centre-line skeletons in cap-height units, y up from the baseline
+    Y:{adv:.80, s:[[P(.05,.97), P(.40,.47)], [P(.75,.97), P(.40,.47), P(.40,.03)]]},
+    o:{adv:.64, s:[arc(.32,.34,.23,.28, Math.PI*.58, Math.PI*2.64, 72)]},
+    u:{adv:.60, s:[[P(.09,.64), P(.09,.27), ...arc(.29,.27,.20,.24, Math.PI, Math.PI*2, 36)], [P(.49,.64), P(.49,.03)]]},
+    T:{adv:.72, s:[[P(.03,.93), P(.69,.93)], [P(.36,.93), P(.36,.03)]]},
+    b:{adv:.64, s:[[P(.09,1.0), P(.09,.03)], arc(.33,.34,.23,.28, Math.PI*.83, -Math.PI*.83, 60)]},
+    e:{adv:.62, s:[[P(.10,.34), ...arc(.32,.34,.22,.28, 0, Math.PI*1.78, 64)]]},
+  };
+  const WORD = 'YouTube', GAP = .03;
+  const wordEm = [...WORD].reduce((s, ch) => s + LETTERS[ch].adv, 0) + GAP * (WORD.length - 1);
+
+  let L = null;
+  function makeLayout(tall){
+    let o;
+    if(!tall){
+      const PW = 1100, PH = 620, M = 50, cap = 132, icon = {x:66, y:186, w:300, h:210};
+      o = {PW, PH, M, cap, icon, tx:icon.x + icon.w + 36, base:icon.y + icon.h / 2 + 66,
+           sig:P(PW - 250, PH - 78), elbow:P(PW * .9, PH + 760), off:P(PW + 330, PH + 300)};
+    }else{
+      const PW = 720, PH = 940, M = 40, cap = 110, icon = {x:150, y:170, w:420, h:294};
+      o = {PW, PH, M, cap, icon, tx:(PW - wordEm * cap) / 2, base:icon.y + icon.h + 70 + .97 * cap,
+           sig:P(PW - 250, PH - 100), elbow:P(PW * .95, PH + 700), off:P(PW + 320, PH + 320)};
+    }
+    o.tall = tall; o.SW = o.PW + 2 * o.M; o.SH = o.PH + 2 * o.M; o.rot = -.012;
+    const ic = o.icon; ic.r = ic.h * .26; ic.cx = ic.x + ic.w / 2; ic.cy = ic.y + ic.h / 2;
+    o.tri = [P(ic.x + ic.w * .40, ic.y + ic.h * .285), P(ic.x + ic.w * .655, ic.cy), P(ic.x + ic.w * .40, ic.y + ic.h * .715)];
+    o.textW = wordEm * o.cap;
+    o.phi0 = Math.atan2(o.elbow.y - o.PH / 2, o.elbow.x - o.PW / 2);
+    return o;
+  }
+
+  function glyphs(){
+    const out = []; let x = 0;
+    for(const ch of WORD){
+      const g = LETTERS[ch];
+      out.push({ch, x0:L.tx + x * L.cap, strokes:g.s.map(s => s.map(p => P(L.tx + (x + p.x) * L.cap, L.base - p.y * L.cap)))});
+      x += g.adv + GAP;
+    }
+    return out;
+  }
+
+  // icon outline, clockwise from the end of the top-left corner
+  function iconPts(inset = 0){
+    const i = inset, x = L.icon.x + i, y = L.icon.y + i, w = L.icon.w - 2 * i, h = L.icon.h - 2 * i, r = L.icon.r - i, H = Math.PI / 2;
+    return [P(x + r, y), P(x + w - r, y), ...arc(x + w - r, y + r, r, r, -H, 0), P(x + w, y + h - r),
+            ...arc(x + w - r, y + h - r, r, r, 0, H), P(x + r, y + h), ...arc(x + r, y + h - r, r, r, H, 2 * H),
+            P(x, y + r), ...arc(x + r, y + r, r, r, 2 * H, 3 * H)];
+  }
+  function iconClip(g){
+    const {x, y, w, h, r} = L.icon, t = L.tri;
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+    g.moveTo(t[0].x, t[0].y); g.lineTo(t[1].x, t[1].y); g.lineTo(t[2].x, t[2].y); g.closePath();
+    g.clip('evenodd');
+  }
+  // top / bottom edge of the rounded icon at x, left / right edge at y
+  function edgeY(x, bottom){
+    const {x:X, y:Y, w, h, r} = L.icon; x = clamp(x, X, X + w);
+    const dx = x < X + r ? X + r - x : x > X + w - r ? x - (X + w - r) : 0;
+    const top = Y + r - Math.sqrt(Math.max(0, r * r - dx * dx));
+    return bottom ? Y + h - (top - Y) : top;
+  }
+  function edgeX(y, right){
+    const {x:X, y:Y, w, h, r} = L.icon; y = clamp(y, Y, Y + h);
+    const dy = y < Y + r ? Y + r - y : y > Y + h - r ? y - (Y + h - r) : 0;
+    const left = X + r - Math.sqrt(Math.max(0, r * r - dy * dy));
+    return right ? X + w - (left - X) : left;
+  }
+
+  /* ================= strokes ================= */
+  const PRESS = {
+    pencil:(f) => .55 + .45 * Math.pow(Math.sin(Math.PI * f), .6),
+    pen:   (f) => .8 + .2 * Math.sin(Math.PI * f),
+    flat:  () => 1,
+    brush: (f, s, len) => Math.min(1, .72 + .28 * s / 16, .78 + .22 * (len - s) / 22),
+    sign:  (f) => .45 + .55 * Math.pow(Math.sin(Math.PI * f), .5),
+  };
+  function presets(){
+    return {
+      guide:  {tool:'pencil',   mode:'pencil', target:SK, width:1.5, alpha:.42, speed:1250, jit:1.3, press:'pencil'},
+      refine: {tool:'pencil',   mode:'pencil', target:SK, width:2,   alpha:.6,  speed:720,  jit:.9,  press:'pencil'},
+      letter: {tool:'pencil',   mode:'pencil', target:SK, width:1.6, alpha:.45, speed:1000, jit:.8,  press:'pencil'},
+      outline:{tool:'redpen',   mode:'solid',  target:IN, width:3.2, alpha:1,   speed:430,  jit:.45, press:'pen',  color:'#ff0000'},
+      marker: {tool:'marker',   mode:'solid',  target:IN, width:30,  alpha:.7,  speed:1850, jit:1.4, press:'flat', color:'#ff0000', clip:true},
+      brush:  {tool:'brush',    mode:'solid',  target:IN, width:L.cap * .18, alpha:1, speed:430, jit:.55, press:'brush', color:'#1d1d1f'},
+      erase:  {tool:'eraser',   mode:'erase',  target:SK, width:24,  alpha:1,   speed:2000, jit:0,   press:'flat'},
+      sign:   {tool:'blackpen', mode:'solid',  target:IN, width:2.4, alpha:1,   speed:620,  jit:.25, press:'sign', color:'#1d1d1f'},
+    };
+  }
+  function mkStroke(raw, o){
+    let pts = resample(raw, 2.5);
+    if(o.jit) pts = wobble(pts, o.jit);
+    const cum = [0];
+    for(let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1], pts[i]));
+    const len = cum[cum.length - 1];
+    return {...o, pts, cum, len, dur:len / o.speed + .04};
+  }
+
+  /* ================= the drawing, as a script ================= */
+  function buildScript(){
+    const S = [], G = {}, pr = presets();
+    const ic = L.icon, {x:X, y:Y, w:W, h:H, r, cx, cy} = ic, tri = L.tri;
+    const c = L.cap, B = L.base, tx = L.tx, tEnd = tx + L.textW;
+    const add = (raw, p, extra = {}) => S.push({stroke:mkStroke(raw, {...p, ...extra}), lift:extra.lift});
+    const guide = (name, raw, p = pr.guide) => { add(raw, p); G[name] = raw; };
+    const letters = glyphs();
+
+    // 1 — block in
+    S.push({phase:0}, {pause:.45});
+    guide('top',    line(P(X, Y + R(-1, 1)), P(X + W, Y + R(-1, 1)), R(12, 22), R(12, 22)));
+    guide('left',   line(P(X + R(-1, 1), Y), P(X + R(-1, 1), Y + H), R(12, 22), R(12, 22)));
+    guide('bottom', line(P(X, Y + H + R(-1, 1)), P(X + W, Y + H + R(-1, 1)), R(12, 22), R(12, 22)));
+    guide('right',  line(P(X + W + R(-1, 1), Y), P(X + W + R(-1, 1), Y + H), R(12, 22), R(12, 22)));
+    guide('vert',   line(P(cx, Y), P(cx, Y + H), R(18, 30), R(18, 30)));
+    guide('horiz',  line(P(X, cy), P(X + W, cy), R(18, 30), R(18, 30)));
+    S.push({pause:.2});
+    for(const k of [0, .68, .97]) guide('t' + k, line(P(tx, B - k * c + R(-1, 1)), P(tEnd, B - k * c + R(-1, 1)), R(22, 36), R(22, 36)));
+    for(const g of [...letters.map(l => l.x0), tEnd]) add(line(P(g, B + 9), P(g, B - 9)), {...pr.guide, speed:500});
+    S.push({pause:.35});
+
+    // 2 — refine
+    S.push({phase:1});
+    const outline = resample(iconPts(), 3), n = outline.length;
+    add(outline.slice(0, Math.round(n * .54)), pr.refine);
+    add([...outline.slice(Math.round(n * .5)), ...outline.slice(0, Math.round(n * .04))], pr.refine);
+    guide('tri0', line(tri[0], tri[1], 4, 9), pr.refine);
+    guide('tri1', line(tri[1], tri[2], 4, 9), pr.refine);
+    guide('tri2', line(tri[2], tri[0], 4, 9), pr.refine);
+    for(const l of letters) for(const s of l.strokes) add(s, pr.letter);
+    S.push({hover:P(L.PW * .72, L.PH * .9), dur:.9});
+
+    // 3 — outline
+    S.push({phase:2}, {tool:'redpen'});
+    add([...outline, ...outline.slice(0, Math.round(n * .03))], pr.outline);
+    add([tri[0], tri[1], tri[2], tri[0], lerpP(tri[0], tri[1], .08)], pr.outline, {speed:300});
+
+    // 4 — marker, two zigzag passes: across, then down
+    S.push({phase:3}, {tool:'marker'});
+    const zig = (horiz) => {
+      const legs = [], step = 13.5, pad = 6; let first = true;
+      if(!horiz){
+        let x = X + 2, down = true, p = P(x, edgeY(x) - pad);
+        while(x < X + W - 2){
+          const nx = Math.min(x + step + R(-1.5, 1.5), X + W - 2), q = P(nx, edgeY(nx, down) + (down ? pad : -pad) + R(-3, 3));
+          legs.push([p, q]); p = q; x = nx; down = !down;
+        }
+      }else{
+        let y = Y + 2, right = true, p = P(edgeX(y) - pad, y);
+        while(y < Y + H - 2){
+          const ny = Math.min(y + step + R(-1.5, 1.5), Y + H - 2), q = P(edgeX(ny, right) + (right ? pad : -pad) + R(-3, 3), ny);
+          legs.push([p, q]); p = q; y = ny; right = !right;
+        }
+      }
+      for(const leg of legs){ add(leg, pr.marker, {lift:first}); first = false; }
+    };
+    zig(false);
+    S.push({pause:.25});
+    zig(true);
+    // clean edge pass: once around just inside the outline, once around the triangle
+    const inner = resample(iconPts(13), 3);
+    add([...inner, ...inner.slice(0, 8)], pr.marker, {speed:1150});
+    const tc = P((tri[0].x + tri[1].x + tri[2].x) / 3, (tri[0].y + tri[1].y + tri[2].y) / 3);
+    const per = dist(tri[0], tri[1]) + dist(tri[1], tri[2]) + dist(tri[2], tri[0]);
+    const area = Math.abs((tri[1].x - tri[0].x) * (tri[2].y - tri[0].y) - (tri[2].x - tri[0].x) * (tri[1].y - tri[0].y)) / 2;
+    const grow = 1 + 13 / (2 * area / per), ring = tri.map(p => lerpP(tc, p, grow));
+    add([ring[0], ring[1], ring[2], ring[0], lerpP(ring[0], ring[1], .15)], pr.marker, {speed:700});
+    S.push({hover:P(L.PW * .5, L.PH * .92), dur:.7});
+
+    // 5 — brush lettering
+    S.push({phase:4}, {tool:'brush'});
+    for(const l of letters){ for(const s of l.strokes) add(s, pr.brush); S.push({pause:.06}); }
+
+    // 6 — erase every guide
+    S.push({phase:5}, {tool:'eraser'});
+    // a few long scrubbing passes rather than one per line, the way you'd really do it
+    const rev = a => [...a].reverse();
+    for(const path of [
+      [...rev(G.t0), ...G['t0.68'], ...rev(G['t0.97'])],                 // lettering guides, back and forth
+      [...G.top, ...G.right, ...rev(G.bottom), ...rev(G.left)],           // the box, once around
+      G.vert, G.horiz,
+      [...outline, ...outline.slice(0, 6)],
+      [...G.tri0, ...G.tri1, ...G.tri2],
+    ]) S.push({stroke:mkStroke(scrub(path, 3.5, 26), pr.erase), erase:true});
+    S.push({pause:.2});
+
+    // 7 — sign
+    S.push({phase:6}, {tool:'blackpen'});
+    const sg = L.sig, sx = 1.25, sy = .8;
+    const sig = [[0,52],[8,4],[36,0],[40,20],[18,30],[8,26],[30,34],[40,42],[48,30],[56,40],[66,30],
+                 [80,28],[86,42],[74,46],[70,36],[88,32],[104,34],[112,20],[118,0],[114,40],[126,30],[140,34]];
+    add(spline(sig.map(([a, b]) => P(sg.x + a * sx, sg.y + b * sy)), 8), pr.sign);
+    add(spline([P(sg.x - 16, sg.y + 64), P(sg.x + 60, sg.y + 56), P(sg.x + 170, sg.y + 48)], 12), pr.sign, {speed:900});
+    S.push({hover:P(L.PW * .88, L.PH * .96), dur:.8}, {pause:.2}, {end:true});
+    return S;
+  }
+
+  /* ================= plan: script -> timed actions ================= */
+  const travelDur = d => .1 + Math.pow(d, .8) / 300;
+  function makePlan(S){
+    const acts = []; let pos = L.off, tool = 'pencil', t = 0;
+    const push = a => { a.start = t; t += a.dur; acts.push(a); };
+    for(const it of S){
+      if('phase' in it) push({k:'phase', i:it.phase, dur:0});
+      else if('pause' in it) push({k:'pause', at:pos, dur:it.pause});
+      else if('tool' in it){
+        if(it.tool !== tool){
+          push({k:'travel', from:pos, to:L.off, dur:travelDur(dist(pos, L.off)), lift:1});
+          push({k:'swap', tool:it.tool, dur:.3});
+          pos = L.off; tool = it.tool;
+        }
+      }
+      else if('hover' in it){ push({k:'hover', from:pos, to:it.hover, dur:it.dur}); pos = it.hover; }
+      else if('stroke' in it){
+        const s = it.stroke, p0 = s.pts[0], d = dist(pos, p0);
+        if(d > 1.5) push({k:'travel', from:pos, to:p0, dur:it.lift === false ? .05 : travelDur(d), lift:it.lift === false ? 0 : Math.min(1, .3 + d / 260)});
+        push({k:'stroke', s, erase:!!it.erase, dur:s.dur});
+        pos = s.pts[s.pts.length - 1];
+      }
+      else if(it.end){
+        push({k:'travel', from:pos, to:L.off, dur:travelDur(dist(pos, L.off)), lift:1});
+        push({k:'done', dur:0});
+      }
+    }
+    return {acts, total:t};
+  }
+
+  /* ================= canvases ================= */
+  let K = 1, grain = null, paperTex = null;
+  // The hand's shadow renders on a tiny canvas; the browser's smooth upscaling softens it for free
+  // (a CSS blur on a full-size canvas costs a lot of frame time on weaker machines).
+  const SHADOW_RES = .25;
+  function base(g, k = K){ g.setTransform(k, 0, 0, k, 0, 0); g.translate(L.SW / 2, L.SH / 2); g.rotate(L.rot); g.translate(-L.PW / 2, -L.PH / 2); }
+  function wipe(g){ g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, g.canvas.width, g.canvas.height); }
+  function sizeCanvases(){
+    const dpr = window.devicePixelRatio || 1;
+    K = clamp(stage.clientWidth * dpr / L.SW, 1, 2);
+    for(const l of ALL){ const k = l === SH ? SHADOW_RES : K; l.c.width = Math.round(L.SW * k); l.c.height = Math.round(L.SH * k); }
+    stage.style.setProperty('--ar', `${L.SW}/${L.SH}`);
+  }
+  function noiseCanvas(size, fn){
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d'), id = g.createImageData(size, size);
+    for(let i = 0; i < id.data.length; i += 4) fn(id.data, i);
+    g.putImageData(id, 0, 0); return c;
+  }
+  function makeTextures(){
+    grain = noiseCanvas(96, (d, i) => { const v = 52 + Math.random() * 34; d[i] = v; d[i + 1] = v; d[i + 2] = v + 8; d[i + 3] = Math.random() < .7 ? 255 : 0; });
+    paperTex = noiseCanvas(160, (d, i) => { const v = Math.random() < .5 ? 0 : 255; d[i] = v; d[i + 1] = v * .96; d[i + 2] = v * .9; d[i + 3] = Math.random() * 10; });
+  }
+  function pattern(g, src){
+    const p = g.createPattern(src, 'repeat');
+    if(p && p.setTransform && window.DOMMatrix) p.setTransform(new DOMMatrix().scale(1 / K));
+    return p;
+  }
+
+  function drawPaper(){
+    const g = PA.g, {PW, PH} = L; wipe(g); base(g);
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 26 * K; g.shadowOffsetY = 10 * K;
+    g.fillStyle = '#fbfaf5'; g.fillRect(0, 0, PW, PH);
+    g.restore();
+    g.fillStyle = pattern(g, paperTex); g.fillRect(0, 0, PW, PH);
+    const v = g.createRadialGradient(PW / 2, PH / 2, Math.min(PW, PH) * .25, PW / 2, PH / 2, Math.max(PW, PH) * .75);
+    v.addColorStop(0, 'rgba(120,90,50,0)'); v.addColorStop(1, 'rgba(120,90,50,.08)');
+    g.fillStyle = v; g.fillRect(0, 0, PW, PH);
+    // masking tape on the top corners
+    for(const [x, y, a] of [[18, 10, -.62], [PW - 18, 10, .62]]){
+      g.save(); g.translate(x, y); g.rotate(a);
+      g.fillStyle = 'rgba(232,219,176,.88)';
+      g.beginPath(); g.moveTo(-54, -15);
+      for(let i = 0; i <= 6; i++) g.lineTo(54 + (i % 2 ? 3 : 0), -15 + i * 5);
+      for(let i = 0; i <= 6; i++) g.lineTo(-54 - (i % 2 ? 3 : 0), 15 - i * 5);
+      g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(-50, -12, 100, 6);
+      g.restore();
+    }
+  }
+
+  /* ================= the hand and its tools ================= */
+  // Local frame: the tool tip is the origin, +x runs up the tool toward the hand, +y is the thumb side.
+  function capsule(g, pts, w, fill, edge, sil){
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const path = () => { g.beginPath(); g.moveTo(pts[0].x, pts[0].y); for(const p of pts.slice(1)) g.lineTo(p.x, p.y); };
+    if(!sil){ path(); g.strokeStyle = edge; g.lineWidth = w + 3; g.stroke(); }
+    path(); g.strokeStyle = sil ? '#000' : fill; g.lineWidth = w; g.stroke();
+  }
+  function blob(g, pts, fill, edge, sil){
+    const n = pts.length; g.beginPath();
+    for(let i = 0; i < n; i++){
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      if(!i) g.moveTo(p1.x, p1.y);
+      g.bezierCurveTo(p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y);
+    }
+    g.closePath(); g.fillStyle = sil ? '#000' : fill; g.fill();
+    if(!sil){ g.strokeStyle = edge; g.lineWidth = 1.6; g.stroke(); }
+  }
+  function rrect(g, x, y, w, h, r){ g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
+
+  const TOOLS = {
+    pencil(g, C){
+      g.fillStyle = C('#e9c79c'); g.beginPath(); g.moveTo(7, -2.3); g.lineTo(30, -8.5);
+      for(let i = 0; i <= 4; i++) g.lineTo(i % 2 ? 27 : 31, -8.5 + i * 4.25); g.lineTo(7, 2.3); g.fill();
+      g.fillStyle = C('#3b3b40'); g.beginPath(); g.moveTo(0, 0); g.lineTo(8, -2.6); g.lineTo(8, 2.6); g.fill();
+      g.fillStyle = C('#f2b400'); g.fillRect(30, -8.5, 200, 17);
+      g.fillStyle = C('#ffd452'); g.fillRect(30, -8.5, 200, 5);
+      g.fillStyle = C('#cf9200'); g.fillRect(30, 3.5, 200, 5);
+      g.fillStyle = C('#c9ced6'); g.fillRect(230, -9, 20, 18);
+      g.fillStyle = C('#9aa1ac'); for(const x of [234, 240, 246]) g.fillRect(x, -9, 1.6, 18);
+      g.fillStyle = C('#f08c9f'); rrect(g, 249, -8.5, 17, 17, [0, 5, 5, 0]); g.fill();
+    },
+    redpen(g, C){ penBody(g, C, '#ff1f1f'); },
+    blackpen(g, C){ penBody(g, C, '#1f1f22'); },
+    marker(g, C){
+      g.fillStyle = C('#ff1a1a'); g.beginPath(); g.moveTo(0, -5); g.lineTo(3, 5); g.lineTo(17, 10); g.lineTo(17, -10); g.fill();
+      g.fillStyle = C('#d7dbe1'); g.fillRect(16, -11.5, 16, 23);
+      g.fillStyle = C('#fafafa'); rrect(g, 31, -15, 180, 30, 4); g.fill();
+      g.fillStyle = C('#e2e5ea'); g.fillRect(31, 7, 180, 8);
+      g.fillStyle = C('#ff1a1a'); g.fillRect(165, -15, 14, 30);
+      rrect(g, 208, -15.5, 26, 31, [2, 9, 9, 2]); g.fill();
+    },
+    brush(g, C){
+      g.fillStyle = C('#111'); g.beginPath(); g.moveTo(0, 0);
+      g.bezierCurveTo(8, -1.5, 16, -6, 25, -5.5); g.lineTo(25, 5.5); g.bezierCurveTo(16, 6, 8, 1.5, 0, 0); g.fill();
+      g.fillStyle = C('#6b707a'); g.fillRect(24, -6.5, 14, 13);
+      g.fillStyle = C('#1d1f24'); rrect(g, 37, -8, 190, 16, [0, 6, 6, 0]); g.fill();
+      g.fillStyle = C('#c9a55a'); g.fillRect(196, -8, 6, 16);
+      g.fillStyle = C('#34373f'); g.fillRect(37, -8, 190, 4);
+    },
+    eraser(g, C){
+      g.fillStyle = C('#f6a8b6'); rrect(g, 0, -15, 80, 30, 6); g.fill();
+      g.fillStyle = C('#fbc9d2'); g.fillRect(3, -13, 22, 6);
+      g.fillStyle = C('#2f6fe0'); g.fillRect(26, -16, 56, 32);
+      g.fillStyle = C('#ffffff'); g.fillRect(34, -3, 40, 3); g.fillRect(34, 4, 26, 2);
+    },
+  };
+  function penBody(g, C, cap){
+    g.fillStyle = C('#8a8f98'); g.fillRect(0, -1, 8, 2);
+    g.fillStyle = C('#e7e9ed'); g.beginPath(); g.moveTo(7, -1.8); g.lineTo(24, -7.5); g.lineTo(24, 7.5); g.lineTo(7, 1.8); g.fill();
+    g.fillStyle = C('#cfd3da'); g.fillRect(24, -8, 50, 16);
+    g.fillStyle = C('#b9bec7'); for(let x = 28; x < 72; x += 6) g.fillRect(x, -8, 2, 16);
+    g.fillStyle = C('#f6f6f6'); g.fillRect(74, -8.5, 146, 17);
+    g.fillStyle = C('#e1e4e9'); g.fillRect(74, 4, 146, 4.5);
+    g.fillStyle = C(cap); g.fillRect(150, -8.5, 8, 17);
+    rrect(g, 218, -9, 26, 18, [2, 7, 7, 2]); g.fill();
+  }
+
+  function drawRig(g, tool, sil){
+    const C = c => sil ? '#000' : c;
+    const skin = '#f2c4a0', skinB = '#e6ae88', edge = '#b97a55', sleeve = '#2e3444', cuff = '#3b4254';
+    // forearm in a sleeve, leaving the frame toward the elbow
+    const W = P(236, -38), ad = P(.8, .6), n = P(-ad.y, ad.x);
+    const at = (d, s) => P(W.x + ad.x * d + n.x * s, W.y + ad.y * d + n.y * s);
+    g.fillStyle = C(skinB); g.beginPath();
+    g.moveTo(...xy(at(-10, -50))); g.lineTo(...xy(at(60, -54))); g.lineTo(...xy(at(60, 54))); g.lineTo(...xy(at(-10, 50))); g.fill();
+    g.fillStyle = C(sleeve); g.beginPath();
+    g.moveTo(...xy(at(46, -70))); g.lineTo(...xy(at(1000, -84))); g.lineTo(...xy(at(1000, 84))); g.lineTo(...xy(at(46, 70))); g.fill();
+    g.fillStyle = C(cuff); g.beginPath();
+    g.moveTo(...xy(at(40, -72))); g.lineTo(...xy(at(84, -74))); g.lineTo(...xy(at(84, 74))); g.lineTo(...xy(at(40, 72))); g.fill();
+    if(!sil){ g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 2; g.beginPath(); g.moveTo(...xy(at(130, -60))); g.lineTo(...xy(at(420, -70))); g.stroke(); }
+
+    // curled fingers tucked under the palm (pinky, ring, middle)
+    capsule(g, [P(176, -122), P(152, -130), P(140, -116)], 22, skinB, edge, sil);
+    capsule(g, [P(150, -98), P(118, -104), P(102, -88)], 24, skinB, edge, sil);
+    capsule(g, [P(126, -66), P(84, -58), P(56, -24)], 26, skin, edge, sil);
+    // back of the hand
+    blob(g, [P(150, 6), P(114, -22), P(118, -64), P(136, -100), P(162, -128), P(208, -134), P(256, -106), P(270, -74), P(248, -24), P(210, 12), P(180, 22)], skin, edge, sil);
+    if(!sil){
+      g.strokeStyle = 'rgba(185,122,85,.55)'; g.lineWidth = 1.6; g.lineCap = 'round';
+      for(const [a, b] of [[P(130, -52), P(142, -40)], [P(150, -88), P(162, -76)], [P(174, -116), P(184, -104)]]){ g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
+      g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(196, -70, 38, 22, -.5, 0, Math.PI * 2); g.fill();
+    }
+    // the tool rests in the web between thumb and index finger
+    TOOLS[tool](g, C);
+    // index finger on top of the tool, then the thumb pinching from below
+    capsule(g, [P(122, -30), P(78, -12), P(38, -4)], 26, skin, edge, sil);
+    if(!sil){ g.fillStyle = '#f8dccd'; g.beginPath(); g.ellipse(46, -6, 9, 7, -.15, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(185,122,85,.6)'; g.lineWidth = 1.2; g.stroke(); }
+    capsule(g, [P(200, 22), P(128, 32), P(58, 16)], 28, skin, edge, sil);
+    if(!sil){ g.fillStyle = '#f8dccd'; g.beginPath(); g.ellipse(66, 16, 9, 7, .2, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(185,122,85,.6)'; g.lineWidth = 1.2; g.stroke(); }
+  }
+  const xy = p => [p.x, p.y];
+
+  /* ================= player ================= */
+  let seed = 1, plan = null, idx = 0, T = 0, speed = 1, playing = true, now = 0, finished = false;
+  const hand = {x:0, y:0, lift:1, tool:'pencil'};
+  let crumbs = [];
+
+  const ease = t => .3 * t + .7 * smooth(t);   // quick in the middle, careful at both ends
+
+  function segment(g, s, a, b, sArc){
+    g.lineWidth = s.width * PRESS[s.press](sArc / s.len, sArc, s.len);
+    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  }
+  function drawTo(s, target){
+    const g = s.mode === 'erase' ? s.target.g : AC.g;
+    let i = s.di;
+    while(i + 1 < s.pts.length && s.cum[i + 1] <= target){ segment(g, s, s.pts[i], s.pts[i + 1], s.cum[i + 1]); i++; }
+    s.di = i;
+    let tip = s.pts[i];
+    if(i + 1 < s.pts.length && target > s.cum[i]){
+      tip = lerpP(s.pts[i], s.pts[i + 1], (target - s.cum[i]) / (s.cum[i + 1] - s.cum[i]));
+      segment(g, s, s.pts[i], tip, target);
+    }
+    return tip;
+  }
+
+  function begin(a){
+    if(a.k === 'stroke'){
+      const s = a.s; s.di = 0; s.rubbed = 0;
+      const g = s.mode === 'erase' ? s.target.g : AC.g;
+      g.save(); base(g);
+      if(s.clip) iconClip(g);
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      if(s.mode === 'erase'){ g.globalCompositeOperation = 'destination-out'; g.strokeStyle = '#000'; }
+      else{ g.strokeStyle = s.mode === 'pencil' ? pattern(g, grain) : s.color; AC.c.style.opacity = s.alpha; }
+    }
+    else if(a.k === 'phase') setStep(a.i);
+    else if(a.k === 'swap') hand.tool = a.tool;
+    else if(a.k === 'done') setDone();
+  }
+  function progress(a, f){
+    if(a.k === 'stroke'){
+      const s = a.s, tip = drawTo(s, ease(f) * s.len);
+      if(a.erase){
+        const along = ease(f) * s.len;
+        let k = 0;
+        while(along - s.rubbed > 26 && k++ < 3){ s.rubbed += 26; spawnCrumb(tip, a.start + a.dur * f); }
+      }
+      hand.x = tip.x; hand.y = tip.y; hand.lift = 0;
+    }else if(a.k === 'travel'){
+      const e = smooth(f), d = dist(a.from, a.to), bow = Math.min(40, d * .12) * Math.sin(Math.PI * e);
+      const p = lerpP(a.from, a.to, e), nx = -(a.to.y - a.from.y) / (d || 1), ny = (a.to.x - a.from.x) / (d || 1);
+      hand.x = p.x + nx * bow; hand.y = p.y + ny * bow; hand.lift = a.lift * Math.sin(Math.PI * f);
+    }else if(a.k === 'hover'){
+      const p = lerpP(a.from, a.to, smooth(f));
+      hand.x = p.x; hand.y = p.y; hand.lift = .9 * Math.min(1, f * 5, (1 - f) * 5);
+    }else if(a.k === 'pause'){
+      hand.x = a.at.x; hand.y = a.at.y; hand.lift = .3 * Math.sin(Math.PI * f);
+    }
+  }
+  function end(a){
+    if(a.k !== 'stroke') return;
+    const s = a.s;
+    if(s.mode === 'erase'){ s.target.g.restore(); return; }
+    AC.g.restore();
+    const g = s.target.g;
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = s.alpha; g.drawImage(AC.c, 0, 0); g.restore();
+    wipe(AC.g); AC.c.style.opacity = 1;
+  }
+
+  function advance(dt){
+    let rem = dt;
+    while(rem > 1e-9 && idx < plan.acts.length){
+      const a = plan.acts[idx];
+      if(!a.begun){ a.begun = true; a.el = 0; begin(a); }
+      const left = a.dur - a.el;
+      if(rem >= left){ a.el = a.dur; progress(a, 1); end(a); idx++; rem -= left; }
+      else{ a.el += rem; progress(a, a.el / a.dur); rem = 0; }
+    }
+    // zero-length actions waiting at the head of the queue (phase changes, "done")
+    while(idx < plan.acts.length && plan.acts[idx].dur === 0){ const a = plan.acts[idx]; begin(a); progress(a, 1); end(a); idx++; }
+    T = idx < plan.acts.length ? plan.acts[idx].start + (plan.acts[idx].el || 0) : plan.total;
+  }
+
+  /* eraser crumbs */
+  function spawnCrumb(p, born){
+    crumbs.push({x:p.x + (Math.random() - .5) * 26, y:p.y + (Math.random() - .5) * 26,
+                 vx:(Math.random() - .5) * 70, vy:(Math.random() - .5) * 70, r:1 + Math.random() * 2.2, born,
+                 col:Math.random() < .6 ? '#e7a4b0' : '#9a969c', rot:Math.random() * 3});
+    if(crumbs.length > 400) crumbs.shift();
+  }
+  function stepCrumbs(dt){
+    for(const c of crumbs){ c.x += c.vx * dt; c.y += c.vy * dt; c.vx *= Math.pow(.02, dt); c.vy *= Math.pow(.02, dt); }
+    crumbs = crumbs.filter(c => T - c.born < 5);
+  }
+
+  /* ================= render ================= */
+  function handAngle(x, y){
+    const phi = Math.atan2(L.elbow.y - y, L.elbow.x - x);
+    return .6 + .45 * (phi - L.phi0) + .025 * Math.sin(now * .9);
+  }
+  function render(){
+    const g = HA.g, sg = SH.g;
+    wipe(g); wipe(sg); base(g); base(sg, SHADOW_RES);
+    for(const c of crumbs){
+      const age = T - c.born;
+      g.globalAlpha = age < 3.5 ? 1 : Math.max(0, 1 - (age - 3.5) / 1.5);
+      g.fillStyle = c.col; g.beginPath(); g.ellipse(c.x, c.y, c.r * 1.4, c.r, c.rot, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+    if(hand.x > L.PW + 220 && hand.y > L.PH + 200) return;   // parked off the paper
+    const th = handAngle(hand.x, hand.y), sc = 1 + .05 * hand.lift;
+    g.save(); g.translate(hand.x, hand.y); g.rotate(th); g.scale(sc, sc); drawRig(g, hand.tool, false); g.restore();
+    // shadow: touches the tip on the paper and falls further away the higher the hand is
+    const off = 2 + 30 * hand.lift, lx = .55, ly = .84;
+    const cs = Math.cos(-th), sn = Math.sin(-th), ld = P(lx * cs - ly * sn, lx * sn + ly * cs), sh = .1;
+    sg.save(); sg.filter = 'blur(1.4px)'; sg.translate(hand.x + off * lx, hand.y + off * ly); sg.rotate(th);
+    sg.transform(1 + ld.x * sh, ld.y * sh, 0, 1, 0, 0); sg.scale(sc, sc);
+    drawRig(sg, hand.tool, true); sg.restore();
+  }
+
+  /* ================= HUD ================= */
+  const stepList = $('steps');
+  stepList.innerHTML = STEPS.map(s => `<li><b>${s.name}</b>${s.note}</li>`).join('');
+  function setStep(i){
+    $('stepNum').textContent = `${i + 1}/${STEPS.length}`;
+    $('stepName').textContent = STEPS[i].name;
+    $('stepTool').textContent = STEPS[i].tool;
+    [...stepList.children].forEach((li, k) => { li.classList.toggle('now', k === i); li.classList.toggle('done', k < i); });
+  }
+  function setDone(){
+    finished = true;
+    $('stepNum').textContent = '✓';
+    $('stepName').textContent = 'Finished';
+    $('stepTool').textContent = 'signed and done';
+    [...stepList.children].forEach(li => { li.classList.remove('now'); li.classList.add('done'); });
+    syncPause();
+  }
+  function hud(){
+    const secs = Math.round(T * TIMELAPSE);
+    $('clock').textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
+    $('prog').style.width = `${(T / plan.total * 100).toFixed(2)}%`;
+    $('rec').classList.toggle('off', !playing || finished);
+  }
+
+  /* ================= lifecycle ================= */
+  function start(newSeed, seekTo = 0){
+    seed = newSeed;
+    rnd = mulberry32(seed);
+    for(const l of ALL) wipe(l.g);
+    AC.c.style.opacity = 1;
+    sizeCanvases(); drawPaper();
+    plan = makePlan(buildScript());
+    idx = 0; T = 0; finished = false; crumbs = [];
+    Object.assign(hand, {x:L.off.x, y:L.off.y, lift:1, tool:'pencil'});
+    setStep(0);
+    advance(0);
+    if(seekTo > 0){ advance(seekTo); crumbs = []; }
+    render(); hud();
+  }
+  let last = performance.now();
+  function frame(ts){
+    const dt = Math.min(.05, (ts - last) / 1000); last = ts;
+    if(playing && !finished){ now += dt; advance(dt * speed); stepCrumbs(dt * speed); render(); hud(); }
+    requestAnimationFrame(frame);
+  }
+
+  function syncPause(){ $('btnPause').textContent = playing && !finished ? 'Pause' : 'Play'; $('btnPause').disabled = finished; hud(); }
+  $('btnReplay').onclick = () => { playing = true; start((Math.random() * 1e9) | 0); syncPause(); };
+  $('btnPause').onclick = () => { playing = !playing; syncPause(); };
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+    speed = +b.dataset.speed;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  document.addEventListener('keydown', e => {
+    if(e.code === 'Space' && !/BUTTON|INPUT/.test(document.activeElement.tagName)){ e.preventDefault(); if(!finished){ playing = !playing; syncPause(); } }
+  });
+
+  const isTall = () => stage.clientWidth < 640;
+  let resizeTimer = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if(isTall() !== L.tall){ L = makeLayout(isTall()); start(seed, T); }   // same drawing, new composition
+    }, 150);
+  });
+
+  // ?t=12 jumps to 12 s of playback and pauses there, ?seed=5 picks a fixed hand
+  const q = new URLSearchParams(location.search);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  L = makeLayout(isTall());
+  makeTextures();
+  const at = q.has('t') ? +q.get('t') : reduced ? 1e6 : 0;
+  start(q.has('seed') ? +q.get('seed') : (Math.random() * 1e9) | 0, at);
+  if(q.has('t')) playing = false;
+  syncPause();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
