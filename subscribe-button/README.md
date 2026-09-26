@@ -4,13 +4,19 @@ A 3D-printable copy of YouTube's red SUBSCRIBE button that you can really press.
 
 ![Assembled button](preview.png)
 
+## Try it before you print
+
+Open `tester.html` in a browser (it needs an internet connection to load the 3D viewer). It shows the exact model from the 3MF. Click or tap the red face to press it, or hold to keep it down. **See inside** makes the base and face see-through, so you can watch the springs bend.
+
 ## Files
 
 | File | What it is |
 | --- | --- |
 | `subscribe_button.3mf` | All three parts on one plate, laid out to print. Open this in your slicer. |
 | `stl/` | The same parts as STL files, if your slicer handles those better |
+| `tester.html` | 3D page where you can press the button before printing it |
 | `make_subscribe_button.py` | The script that builds everything. Change the numbers at the top and run it again. |
+| `make_tester.py`, `tester_template.html` | Build `tester.html` from the same geometry. Run `python3 make_tester.py` after changing the model. |
 
 ## Parts
 

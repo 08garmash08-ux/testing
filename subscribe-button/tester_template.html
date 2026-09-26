@@ -1,0 +1,560 @@
+<title>Subscribe Button Tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Narrow:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #f4f1f0;
+    --surface: #fbf9f9;
+    --ink: #1d1716;
+    --muted: #6b6160;
+    --line: #e0d7d5;
+    --accent: #d9140e;
+    --on-accent: #ffffff;
+    --stage: #e8e3e1;
+    --chip: rgba(251, 249, 249, 0.86);
+    --grid-major: #c8bdba;
+    --grid-minor: #d9d1cf;
+    --display: "Archivo Narrow", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #131010;
+      --surface: #1b1616;
+      --ink: #f3edec;
+      --muted: #a89e9c;
+      --line: #352c2b;
+      --accent: #ff4234;
+      --stage: #1d1818;
+      --chip: rgba(27, 22, 22, 0.86);
+      --grid-major: #423735;
+      --grid-minor: #2c2423;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #131010;
+    --surface: #1b1616;
+    --ink: #f3edec;
+    --muted: #a89e9c;
+    --line: #352c2b;
+    --accent: #ff4234;
+    --stage: #1d1818;
+    --chip: rgba(27, 22, 22, 0.86);
+    --grid-major: #423735;
+    --grid-minor: #2c2423;
+  }
+
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 28px 40px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 20px; }
+
+  header { display: grid; gap: 8px; }
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(30px, 5.4vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h1 .yt {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--on-accent);
+    padding: 0 0.3em;
+    border-radius: 0.1em;
+    letter-spacing: 0.02em;
+  }
+  .lede { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 72vh;
+    background: var(--stage);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .stage canvas, .stage .fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .stage canvas { cursor: grab; }
+  .stage canvas.over-button { cursor: pointer; }
+  .stage canvas.dragging { cursor: grabbing; }
+  .stage .fallback { object-fit: contain; }
+  .stage .fallback[hidden] { display: none; }
+  .tools {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .tools button {
+    pointer-events: auto;
+    font: 500 13px/1 var(--body);
+    padding: 9px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--chip);
+    color: var(--ink);
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .tools button:hover { border-color: var(--muted); }
+  .tools button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tools button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hint {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+    font: 500 13px/1.25 var(--body);
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--chip);
+    pointer-events: none;
+  }
+  .message {
+    position: absolute;
+    inset: auto 12px 56px 12px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .readouts {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    border-block: 1px solid var(--line);
+  }
+  .cell { display: grid; gap: 6px; align-content: start; padding: 14px 16px; border-left: 1px solid var(--line); }
+  .cell:first-child { border-left: 0; padding-left: 0; }
+  .label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .value { font-family: var(--mono); font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .value small { font-size: 14px; color: var(--muted); }
+  .meter { position: relative; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .meter i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); }
+  .scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  .note { margin: 0; font-size: 13px; color: var(--muted); max-width: 72ch; }
+
+  @media (max-width: 560px) {
+    .stage { aspect-ratio: 1 / 1; }
+    .readouts { grid-template-columns: 1fr 1fr; }
+    .cell:first-child { grid-column: 1 / -1; padding-right: 0; border-bottom: 1px solid var(--line); }
+    .cell:nth-child(2) { border-left: 0; padding-left: 0; }
+    .value { font-size: 22px; }
+  }
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">3D print preview · 126 × 46 × 18.7 mm · 3 parts</p>
+    <h1>Press the <span class="yt">SUBSCRIBE</span> button</h1>
+    <p class="lede">This is the model from subscribe_button.3mf, springs and all. Click or tap the red face to press it, and hold to keep it down. Drag anywhere else to turn it.</p>
+  </header>
+
+  <section class="stage" id="stage" tabindex="0" aria-label="3D model of the subscribe button. Press Space or Enter to press the button.">
+    <img class="fallback" id="fallback" alt="The red SUBSCRIBE button, assembled" src="/*PREVIEW*/">
+    <canvas id="view"></canvas>
+    <div class="tools">
+      <button type="button" id="inside" aria-pressed="false">See inside</button>
+      <button type="button" id="sound" aria-pressed="true">Sound on</button>
+      <button type="button" id="reset">Reset view</button>
+    </div>
+    <p class="hint" id="hint">Click the red face</p>
+    <p class="message" id="message" hidden></p>
+  </section>
+
+  <section class="readouts" aria-live="polite">
+    <div class="cell">
+      <span class="label">Press depth</span>
+      <span class="value"><span id="travel">0.0</span> <small>/ 3.5 mm</small></span>
+      <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+      <div class="scale" aria-hidden="true"><span>rest</span><span>pocket floor</span></div>
+    </div>
+    <div class="cell">
+      <span class="label">Spring force</span>
+      <span class="value"><span id="force">0.0</span> <small>N</small></span>
+    </div>
+    <div class="cell">
+      <span class="label">Presses</span>
+      <span class="value" id="count">0</span>
+    </div>
+  </section>
+
+  <p class="note">The spring force is an estimate for printed PLA, worked out from the arm size. A real print can be 20–30 % softer or stiffer. In <strong>See inside</strong> mode the base and face turn see-through, so you can watch the four folded springs bend as the face goes down.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const M = /*MODEL*/null;
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("view");
+  const hint = document.getElementById("hint");
+  const message = document.getElementById("message");
+  const out = {
+    travel: document.getElementById("travel"),
+    force: document.getElementById("force"),
+    count: document.getElementById("count"),
+    meter: document.getElementById("meter"),
+  };
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  hint.textContent = coarse ? "Tap the red face" : "Click the red face, or press Space";
+
+  function fail(text) {
+    message.textContent = text;
+    message.hidden = false;
+    hint.hidden = true;
+  }
+  if (!window.THREE || !THREE.OrbitControls) {
+    fail("The 3D viewer could not load. Check your connection and reload the page.");
+    return;
+  }
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch (e) {
+    fail("This browser can't show 3D here, so you're seeing a still picture instead.");
+    return;
+  }
+
+  // ---------------------------------------------------------------- geometry
+  function bytes(b64) {
+    const s = atob(b64), a = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
+    return a.buffer;
+  }
+  function geometry(part) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(bytes(part.p)), 3));
+    g.setIndex(new THREE.BufferAttribute(part.wide ? new Uint32Array(bytes(part.i)) : new Uint16Array(bytes(part.i)), 1));
+    g.computeBoundingSphere();
+    return g;
+  }
+
+  THREE.ColorManagement.legacyMode = false;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, 5, 2000);
+  camera.up.set(0, 0, 1);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7d7a, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.95);
+  key.position.set(-70, -110, 190);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -110, right: 110, top: 80, bottom: -80, near: 50, far: 500 });
+  key.shadow.bias = -0.0005;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.25);
+  fill.position.set(120, 60, 60);
+  scene.add(fill);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  ground.receiveShadow = true;
+  scene.add(ground);
+  // 10 mm build-plate grid
+  const gridMinor = new THREE.GridHelper(300, 30);
+  const gridMajor = new THREE.GridHelper(300, 6);
+  [gridMinor, gridMajor].forEach(function (g, i) {
+    g.rotation.x = Math.PI / 2;
+    g.position.z = i ? -0.04 : -0.05;
+    g.material.transparent = true;
+    g.material.opacity = 0.9;
+    scene.add(g);
+  });
+
+  const RED = new THREE.Color("#d9140e");
+  const AMBER = new THREE.Color("#f29a1f");
+  const mats = {
+    base: new THREE.MeshStandardMaterial({ color: RED, roughness: 0.55, metalness: 0, flatShading: true }),
+    spring: new THREE.MeshStandardMaterial({ color: RED, roughness: 0.55, metalness: 0, flatShading: true }),
+    cap: new THREE.MeshStandardMaterial({ color: RED, roughness: 0.5, metalness: 0, flatShading: true }),
+    text: new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.6, metalness: 0, flatShading: true }),
+  };
+
+  const base = new THREE.Mesh(geometry(M.base), mats.base);
+  const springGeo = geometry(M.spring);
+  const spring = new THREE.Mesh(springGeo, mats.spring);
+  spring.position.z = M.zLedge;
+  const cap = new THREE.Mesh(geometry(M.cap), mats.cap);
+  const text = new THREE.Mesh(geometry(M.text), mats.text);
+  const face = new THREE.Group();
+  face.add(cap, text);
+  face.position.z = M.zCap;
+  [base, spring, cap, text].forEach(function (m) { m.castShadow = true; m.receiveShadow = true; });
+  scene.add(base, spring, face);
+
+  const restZ = Float32Array.from(springGeo.attributes.position.array);
+  const weight = new Float32Array(bytes(M.spring.w));
+
+  function applyTravel(x) {
+    face.position.z = M.zCap - x;
+    const pos = springGeo.attributes.position.array;
+    for (let i = 0, n = weight.length; i < n; i++) pos[i * 3 + 2] = restZ[i * 3 + 2] - weight[i] * x;
+    springGeo.attributes.position.needsUpdate = true;
+    const shown = Math.max(0, Math.min(M.travel, x));
+    out.travel.textContent = shown.toFixed(1);
+    out.force.textContent = (M.k * shown).toFixed(1);
+    out.meter.style.width = (shown / M.travel * 100).toFixed(1) + "%";
+  }
+
+  // ---------------------------------------------------------------- theme
+  function applyTheme() {
+    const css = getComputedStyle(document.documentElement);
+    gridMinor.material.color.set(css.getPropertyValue("--grid-minor").trim() || "#d9d1cf");
+    gridMajor.material.color.set(css.getPropertyValue("--grid-major").trim() || "#c8bdba");
+  }
+  applyTheme();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ---------------------------------------------------------------- see inside
+  const insideBtn = document.getElementById("inside");
+  function setInside(on) {
+    insideBtn.setAttribute("aria-pressed", String(on));
+    [["base", 0.14], ["cap", 0.2], ["text", 0.45]].forEach(function (pair) {
+      const m = mats[pair[0]];
+      m.transparent = on;
+      m.opacity = on ? pair[1] : 1;
+      m.depthWrite = !on;
+      m.needsUpdate = true;
+    });
+    base.castShadow = cap.castShadow = text.castShadow = !on;
+    mats.spring.color.copy(on ? AMBER : RED);
+    base.renderOrder = cap.renderOrder = text.renderOrder = on ? 2 : 0;
+  }
+  insideBtn.addEventListener("click", function () { setInside(insideBtn.getAttribute("aria-pressed") !== "true"); });
+
+  // ---------------------------------------------------------------- sound
+  let audio = null;
+  let soundOn = true;
+  const soundBtn = document.getElementById("sound");
+  soundBtn.addEventListener("click", function () {
+    soundOn = !soundOn;
+    soundBtn.setAttribute("aria-pressed", String(soundOn));
+    soundBtn.textContent = soundOn ? "Sound on" : "Sound off";
+  });
+  function wakeAudio() {
+    if (!audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; }
+    }
+    if (audio && audio.state === "suspended") audio.resume();
+  }
+  function click(freq, gain, dur) {
+    if (!soundOn || !audio) return;
+    const t = audio.currentTime;
+    const len = Math.max(1, Math.floor(audio.sampleRate * dur));
+    const buf = audio.createBuffer(1, len, audio.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    const band = audio.createBiquadFilter();
+    band.type = "bandpass";
+    band.frequency.value = freq;
+    band.Q.value = 1.4;
+    const g = audio.createGain();
+    g.gain.value = gain;
+    src.connect(band).connect(g).connect(audio.destination);
+    src.start(t);
+    const body = audio.createOscillator();
+    body.frequency.setValueAtTime(freq / 12, t);
+    body.frequency.exponentialRampToValueAtTime(freq / 28, t + 0.05);
+    const bg = audio.createGain();
+    bg.gain.setValueAtTime(gain * 0.5, t);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    body.connect(bg).connect(audio.destination);
+    body.start(t);
+    body.stop(t + 0.07);
+  }
+
+  // ---------------------------------------------------------------- press physics
+  // Finger pushes the face down to the pocket floor; on release the flexure
+  // springs it back with a small overshoot. Units: mm and seconds.
+  let x = 0, v = 0, holding = false, pressing = false, bottomed = false, presses = 0;
+  const OMEGA = 2 * Math.PI * (reduced ? 7 : 15);
+  const ZETA = reduced ? 1 : 0.22;
+
+  function startPress() {
+    wakeAudio();
+    holding = true;
+    pressing = true;
+  }
+  function endPress() { holding = false; }
+
+  function step(dt) {
+    if (pressing) {
+      v += 4200 * dt;
+      x += v * dt;
+      if (x >= M.travel) {
+        x = M.travel;
+        if (!bottomed) {
+          bottomed = true;
+          presses += 1;
+          out.count.textContent = presses;
+          click(2300, 0.9, 0.03);
+          if (presses === 1) hint.textContent = coarse ? "Hold to keep it down · drag to turn" : "Hold to keep it down · drag to turn it";
+        }
+        v = 0;
+        if (!holding) pressing = false;   // a quick tap still goes all the way down
+      }
+    } else {
+      const a = -OMEGA * OMEGA * x - 2 * ZETA * OMEGA * v;
+      v += a * dt;
+      x += v * dt;
+      if (x < -0.5) { x = -0.5; v = 0; }
+      if (bottomed && x <= 0 && v < 0) {
+        bottomed = false;
+        click(3600, 0.3, 0.02);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- picking
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  function hitsFace(e) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    return ray.intersectObjects([cap, text], false).length > 0;
+  }
+  let pointerId = null;
+  // registered before OrbitControls so it runs first and can switch orbiting off
+  canvas.addEventListener("pointerdown", function (e) {
+    if (e.button !== 0 || pointerId !== null) return;
+    if (hitsFace(e)) {
+      pointerId = e.pointerId;
+      controls.enabled = false;
+      canvas.setPointerCapture(e.pointerId);
+      startPress();
+      e.preventDefault();
+    } else {
+      canvas.classList.add("dragging");
+    }
+  });
+  function release(e) {
+    canvas.classList.remove("dragging");
+    if (e.pointerId !== pointerId) return;
+    pointerId = null;
+    controls.enabled = true;
+    endPress();
+  }
+  canvas.addEventListener("pointerup", release);
+  canvas.addEventListener("pointercancel", release);
+  let hoverQueued = null;
+  canvas.addEventListener("pointermove", function (e) {
+    if (e.pointerType !== "mouse" || pointerId !== null) return;
+    if (!hoverQueued) requestAnimationFrame(function () {
+      canvas.classList.toggle("over-button", hitsFace(hoverQueued));
+      hoverQueued = null;
+    });
+    hoverQueued = e;
+  });
+
+  stage.addEventListener("keydown", function (e) {
+    if ((e.key === " " || e.key === "Enter") && e.target === stage) {
+      e.preventDefault();
+      if (!e.repeat) startPress();
+    }
+  });
+  stage.addEventListener("keyup", function (e) {
+    if ((e.key === " " || e.key === "Enter") && e.target === stage) endPress();
+  });
+
+  // ---------------------------------------------------------------- camera
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = !reduced;
+  controls.dampingFactor = 0.09;
+  controls.enablePan = false;
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(82);
+  controls.target.set(0, 0, 8);
+  const VIEW_DIR = new THREE.Vector3(0.2, -1, 0.95).normalize();
+  let userMoved = false;
+  controls.addEventListener("start", function () { userMoved = true; });
+
+  function fitView() {
+    const aspect = camera.aspect;
+    const vHalf = THREE.MathUtils.degToRad(camera.fov / 2);
+    const hHalf = Math.atan(Math.tan(vHalf) * aspect);
+    const dist = Math.max(78 / Math.tan(hHalf), 42 / Math.tan(vHalf));
+    camera.position.copy(controls.target).addScaledVector(VIEW_DIR, dist);
+    controls.minDistance = dist * 0.45;
+    controls.maxDistance = dist * 2.2;
+    controls.update();
+  }
+  document.getElementById("reset").addEventListener("click", function () {
+    userMoved = false;
+    setInside(false);
+    fitView();
+  });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    if (!userMoved) fitView();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  // ---------------------------------------------------------------- loop
+  let last = performance.now(), acc = 0, shownX = 0, first = true;
+  const DT = 1 / 480;
+  function frame(now) {
+    acc += Math.min(0.05, (now - last) / 1000);
+    last = now;
+    while (acc >= DT) { step(DT); acc -= DT; }
+    if (Math.abs(x - shownX) > 1e-4) { applyTravel(x); shownX = x; }
+    controls.update();
+    renderer.render(scene, camera);
+    if (first) { document.getElementById("fallback").hidden = true; first = false; }
+    requestAnimationFrame(frame);
+  }
+  applyTravel(0);
+  requestAnimationFrame(frame);
+})();
+</script>

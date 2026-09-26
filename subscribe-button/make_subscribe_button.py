@@ -43,6 +43,11 @@ LEDGE = 3.0            # ledge width the spring frame rests on
 FLEX_T = 2.0           # frame, carrier, stubs and U-turns
 ARM_T = 1.6            # flexure arm thickness (sets the button force)
 ARM_B = 3.0            # flexure arm width
+CARRIER_X = 53.0       # carrier bar runs from -53 to 53
+STUB_X = (46.0, 52.0)  # where each spring joins the carrier, and the frame
+UTURN_X = (4.0, 7.0)
+ARM1_Y = (5.5, 8.5)    # inner arm, next to the carrier
+ARM2_Y = (10.5, 13.5)  # outer arm, next to the frame
 POST = 8.0             # square posts on the carrier
 POST_X = (-48.0, 0.0, 48.0)
 POST_H = TRAVEL + 0.7  # cap clears the frame by 0.7 mm at full press
@@ -129,20 +134,19 @@ def make_base():
 def make_spring_quarter():
     """One folded flexure spring, in the x > 0, y > 0 quarter.
 
-    It leaves the carrier near the cap's end (x = 46..52), runs an arm in
+    It leaves the carrier near the cap's end (STUB_X), runs an arm in
     towards the middle, turns, and runs a second arm back out to the frame.
     Both arms are 39 mm long: the carrier end moves the full travel, the
     U-turn half of it, the frame end not at all.
     """
-    t, T, b = ARM_T, FLEX_T, ARM_B
-    arm1 = (5.5, 5.5 + b)
-    arm2 = (10.5, 10.5 + b)
+    t, T = ARM_T, FLEX_T
+    (s0, s1), (u0, u1) = STUB_X, UTURN_X
     return union([
-        box(46, 52, 3.5, arm1[0] + 1.5, 0, T),        # stub from the carrier
-        box(4, 52, *arm1, 0, t),                      # inner arm
-        box(4, 7, arm1[0], arm2[1], 0, T),            # U-turn
-        box(4, 52, *arm2, 0, t),                      # outer arm
-        box(46, 52, arm2[0] + 1.5, POCKET_D / 2 + 0.5, 0, T),  # anchor to the frame
+        box(s0, s1, POST / 2 - 0.5, ARM1_Y[0] + 1.5, 0, T),         # stub from the carrier
+        box(u0, s1, *ARM1_Y, 0, t),                                 # inner arm
+        box(u0, u1, ARM1_Y[0], ARM2_Y[1], 0, T),                    # U-turn
+        box(u0, s1, *ARM2_Y, 0, t),                                 # outer arm
+        box(s0, s1, ARM2_Y[0] + 1.5, POCKET_D / 2 + 0.5, 0, T),     # anchor to the frame
     ])
 
 
@@ -150,7 +154,7 @@ def make_spring():
     """Spring plate; z = 0 is its underside."""
     frame = slab(rrect(FRAME_W, FRAME_D, FRAME_R), 0, FLEX_T) - \
         slab(rrect(POCKET_W, POCKET_D, POCKET_R), -1, FLEX_T + 1)
-    carrier = box(-53, 53, -POST / 2, POST / 2, 0, FLEX_T)
+    carrier = box(-CARRIER_X, CARRIER_X, -POST / 2, POST / 2, 0, FLEX_T)
     q = make_spring_quarter()
     springs = [q, q.mirror((1, 0, 0)), q.mirror((0, 1, 0)), q.mirror((1, 0, 0)).mirror((0, 1, 0))]
     posts = []
