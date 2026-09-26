@@ -49,7 +49,7 @@ Your best score of the session is kept in `localStorage`.
 
 ## Android app
 
-`android/` holds a tiny Android app that shows **Hello** in the middle of the screen.
+`android/` holds a tiny Android app that opens **Roblox** as soon as you tap it. If Roblox is not installed, it opens Roblox's Play Store page instead.
 
 - **Get the APK** — every push that touches `android/` runs the *Android APK* workflow; download `hello-debug-apk` from the run's artifacts and install it on your phone.
 - **Build it yourself** (JDK 17+ and the Android SDK):
