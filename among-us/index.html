@@ -44,17 +44,21 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 .tlist{list-style:none;margin:6px 0 0;padding:0;font-size:13.5px;line-height:1.45;display:flex;flex-direction:column;gap:2px}
 .tlist li.done{color:var(--ok)}
 .tlist li.note{color:var(--visor);font-style:italic;margin-top:4px}
+.tlist li.imp{color:#ff8a92;font-style:normal}
+.tlist li.fake{color:var(--dim)}
 .corner{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));display:flex;gap:8px}
 .sq{width:48px;height:48px;border-radius:10px;border:2px solid #000;background:var(--panel-2);display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--line)}
 .sq svg{width:24px;height:24px}
 .actions{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;gap:10px}
-.act{width:88px;height:88px;border-radius:16px;border:3px solid #000;background:var(--panel-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:13px var(--display);letter-spacing:.03em;box-shadow:inset 0 0 0 1px var(--line),0 6px 0 #000;transition:transform .08s,opacity .15s}
+.act{position:relative;width:88px;height:88px;border-radius:16px;border:3px solid #000;background:var(--panel-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:13px var(--display);letter-spacing:.03em;box-shadow:inset 0 0 0 1px var(--line),0 6px 0 #000;transition:transform .08s,opacity .15s}
 .act svg{width:36px;height:36px}
 .act kbd{font-size:11px;padding:0 5px;margin-top:2px}
 .act:disabled{opacity:.3;cursor:default}
 .act:not(:disabled):active{transform:translateY(4px);box-shadow:inset 0 0 0 1px var(--line),0 2px 0 #000}
 .act.use:not(:disabled){background:#1f4a78}
-.act.use.alarm:not(:disabled),.act.report:not(:disabled){background:#7a141c}
+.act.use.alarm:not(:disabled),.act.report:not(:disabled),.act.kill:not(:disabled){background:#7a141c}
+.act.kill:disabled{opacity:.55}
+.cd{position:absolute;inset:0;display:grid;place-items:center;font:36px var(--display);color:#fff;text-shadow:0 3px 0 #000;background:rgba(0,0,0,.45);border-radius:13px}
 .toast{position:absolute;left:50%;bottom:calc(24% + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:clamp(18px,4.5vw,28px) var(--display);text-shadow:0 3px 0 #000,0 0 14px rgba(0,0,0,.9);pointer-events:none;opacity:0;transition:opacity .35s;white-space:nowrap}
 .toast.show{opacity:1}
 .stick{position:fixed;width:124px;height:124px;margin:-62px 0 0 -62px;border-radius:50%;border:3px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);pointer-events:none}
@@ -81,7 +85,7 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 .sw{width:44px;height:44px;border-radius:10px;border:3px solid #000;padding:0;background:var(--c);box-shadow:inset 0 -9px 0 rgba(0,0,0,.28)}
 .sw[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
 .seg{display:flex;border:2px solid #000;border-radius:10px;overflow:hidden}
-.seg button{border:0;background:var(--panel-2);padding:8px 18px;font:15px var(--display);min-width:60px}
+.seg button{border:0;background:var(--panel-2);padding:8px 14px;font:15px var(--display);min-width:60px}
 .seg button[aria-pressed="true"]{background:var(--txt);color:#10131f}
 .keys{margin:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;color:var(--dim);font-size:13px}
 .record{margin:0;color:var(--dim);font-size:13px;font-variant-numeric:tabular-nums}
@@ -89,6 +93,7 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 /* role reveal, splash, death, game over */
 .reveal,.overcard{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:640px}
 .reveal h2{margin:0;font:clamp(50px,14vw,100px)/1 var(--display);color:var(--crew);text-shadow:0 6px 0 #000}
+.reveal h2.imp{color:var(--alarm)}
 .reveal p{margin:0;font-size:19px}
 .reveal p b{color:var(--alarm)}
 .lineup{display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap}
@@ -100,11 +105,6 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 .splash h2{margin:0;font:clamp(36px,10vw,84px)/1 var(--display);text-shadow:0 6px 0 #000;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
 .splash p{margin:14px 0 0;color:#ffd9dc;font-size:18px}
 @keyframes pop{from{transform:scale(.4);opacity:0}}
-.deadnote{background:rgba(70,0,8,.82);pointer-events:none}
-.deadnote div{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
-.deadnote h2{margin:0;font:clamp(34px,9vw,68px)/1 var(--display);text-shadow:0 5px 0 #000}
-.deadnote img{width:110px}
-.deadnote p{margin:0;font-size:17px}
 .overcard h2{margin:0;font:clamp(56px,16vw,120px)/1 var(--display);text-shadow:0 6px 0 #000}
 .overcard h2.win{color:var(--crew)}
 .overcard h2.lose{color:var(--alarm)}
@@ -173,7 +173,7 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
   <div class="taskbox">
     <div class="lbl">Total tasks completed</div>
     <div class="bar"><i id="bar"></i></div>
-    <button class="tlist-head" id="tlToggle" aria-expanded="true" aria-controls="tlist"><span>Your tasks</span><span id="tlCount">0/5</span></button>
+    <button class="tlist-head" id="tlToggle" aria-expanded="true" aria-controls="tlist"><span id="tlHead">Your tasks</span><span id="tlCount">0/5</span></button>
     <ul class="tlist" id="tlist"></ul>
   </div>
   <div class="corner">
@@ -181,6 +181,7 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
     <button class="sq" id="btnSound" aria-label="Mute sound" title="Sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="sndWave" d="M16.5 9a4 4 0 0 1 0 6"/></svg></button>
   </div>
   <div class="actions">
+    <button class="act kill" id="btnKill" hidden disabled aria-label="Kill (Q)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-4.5 1.6-9.6 6.4-12.2 10l2.2 2.2C14.6 12.6 19.4 7.5 21 3z"/><path d="M8 14.2l2.6 2.6-1.4 1.4.9.9-1.7 1.7-3.4-3.4 1.7-1.7.9.9z"/></svg>Kill<kbd>Q</kbd><span class="cd" id="killCd" hidden></span></button>
     <button class="act report" id="btnReport" disabled aria-label="Report body (R)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h3l8 5V5l-8 5z"/><path d="M17.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 14l1.5 5h2.5l-1.2-4.2z"/></svg>Report<kbd>R</kbd></button>
     <button class="act use" id="btnUse" disabled aria-label="Use (E)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 11.5V5.2a1.6 1.6 0 0 1 3.2 0V10h.5V3.6a1.6 1.6 0 0 1 3.2 0V10h.5V5.2a1.6 1.6 0 0 1 3.2 0v8.3c0 4.3-2.6 8-6.8 8-3 0-4.6-1.5-6.1-4.1l-2.6-4.6a1.5 1.5 0 0 1 2.5-1.7z"/></svg><span id="useLbl">Use</span><kbd>E</kbd></button>
   </div>
@@ -191,18 +192,19 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 <section class="screen" id="title">
   <div class="titlecard">
     <h1 class="logo"><span>Sus</span> Station</h1>
-    <p class="tag">You and seven bots crew a ship. One of them is the Impostor. Finish your tasks, report the bodies, and vote the killer out of the airlock.</p>
+    <p class="tag">You and seven bots crew a ship, and someone aboard is the Impostor. It might be you. Do your tasks or hunt the crew, report the bodies, and win the vote.</p>
     <div class="field"><span>Your color</span><div class="swatches" id="swatches" role="group" aria-label="Your color"></div></div>
     <div class="field"><span>Impostors</span><div class="seg" id="impSeg" role="group" aria-label="Number of impostors"><button data-n="1" aria-pressed="true">1</button><button data-n="2" aria-pressed="false">2</button></div></div>
+    <div class="field"><span>Your role</span><div class="seg" id="roleSeg" role="group" aria-label="Your role"><button data-r="random" aria-pressed="true">Random</button><button data-r="crew" aria-pressed="false">Crewmate</button><button data-r="imp" aria-pressed="false">Impostor</button></div></div>
     <button class="btn primary" id="play">Play</button>
-    <p class="keys"><span><kbd>WASD</kbd> or drag to move</span><span><kbd>E</kbd> use</span><span><kbd>R</kbd> report</span><span><kbd>M</kbd> map</span></p>
+    <p class="keys"><span><kbd>WASD</kbd> or drag to move</span><span><kbd>E</kbd> use</span><span><kbd>R</kbd> report</span><span><kbd>Q</kbd> kill</span><span><kbd>M</kbd> map</span></p>
     <p class="record" id="record"></p>
   </div>
 </section>
 
 <section class="screen" id="reveal" hidden>
   <div class="reveal">
-    <h2>Crewmate</h2>
+    <h2 id="revealH">Crewmate</h2>
     <p id="revealP"></p>
     <div class="lineup" id="lineup"></div>
     <p class="hintline">Tap to start</p>
@@ -242,10 +244,6 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
 </section>
 
 <section class="screen eject" id="eject" hidden><p id="ejectText"></p></section>
-
-<section class="screen deadnote" id="deadNote" hidden>
-  <div><h2>You were killed</h2><img id="deadImg" alt=""><p id="deadText"></p></div>
-</section>
 
 <section class="screen dim-bg" id="over" hidden>
   <div class="overcard">
@@ -416,7 +414,7 @@ function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=inne
 addEventListener('resize',resize);resize();
 
 const VISION=340,SPEED=235,BOT_SPEED=200,TASKS_EACH=5;
-const G={mode:'title',t:0,players:[],bodies:[],me:null,done:0,total:1,myDone:0,buttonUsed:false,impCount:1,myColor:'red',
+const G={mode:'title',t:0,players:[],bodies:[],me:null,done:0,total:1,myDone:0,buttonUsed:false,impCount:1,myColor:'red',role:'random',myKills:0,anim:null,
   cam:{x:1200,y:250},keys:{},stick:{on:false,x:0,y:0},task:null,mapOpen:false,round:0,meet:null,ej:null,lastRoom:-1,stun:0,flash:0,sawKill:null};
 
 function makePlayer(col,i,isYou){
@@ -429,10 +427,13 @@ function newGame(){
   const cols=[mine,...shuffle(COLORS.filter(c=>c!==mine)).slice(0,7)];
   G.players=cols.map((c,i)=>makePlayer(c,i,i===0));
   G.me=G.players[0];
-  shuffle(G.players.slice(1)).slice(0,G.impCount).forEach(b=>b.imp=true);
+  // Random gives you the same odds as any other seat; the title screen can force a role
+  const meImp=G.role==='imp'||(G.role==='random'&&Math.random()<G.impCount/G.players.length);
+  G.me.imp=meImp;
+  shuffle(G.players.slice(1)).slice(0,G.impCount-(meImp?1:0)).forEach(b=>b.imp=true);
   for(const p of G.players) p.tasks=shuffle(STATIONS.map(s=>s.i)).slice(0,TASKS_EACH).map(st=>({st,done:false}));
   G.total=G.players.filter(p=>!p.imp).length*TASKS_EACH;
-  G.done=0;G.myDone=0;G.buttonUsed=false;G.round=0;G.t=0;G.meet=null;
+  G.done=0;G.myDone=0;G.myKills=0;G.anim=null;G.buttonUsed=false;G.round=0;G.t=0;G.meet=null;
   resetRound(true);
 }
 function resetRound(first){
@@ -443,7 +444,7 @@ function resetRound(first){
     p.x=BUTTON.x+Math.cos(a)*120;p.y=BUTTON.y+Math.sin(a)*105;
     p.node=2;p.path=[];p.busy=0;p.goal=null;p.hunt=null;p.witness=null;p.wT=0;p.seen=[];p.moving=false;
     p.face=Math.cos(a)>0.1?-1:1;p.idle=rand(.3,1.4);
-    if(p.imp) p.killCd=first?rand(12,18):rand(18,24);
+    if(p.imp) p.killCd=p.isYou?(first?10:15):first?rand(12,18):rand(18,24);
   });
   G.cam.x=G.me.x;G.cam.y=G.me.y;
 }
@@ -530,12 +531,24 @@ function kill(k,v){
   v.alive=false;v.ghost=true;v.path=[];v.busy=0;v.goal=null;v.hunt=null;v.idle=1.5;
   const body={x:v.x,y:v.y,color:v.color,who:v,t:G.t,room:locate(v.x,v.y),killer:k,selfOk:Math.random()<.22};
   G.bodies.push(body);
-  k.x=v.x+(k.x<v.x?-8:8);k.y=v.y+2;k.killCd=rand(20,27);k.hunt=null;k.path=[];k.goal=null;k.idle=.35;
-  for(const p of G.players) if(p.alive&&!p.imp&&!p.isYou&&dist(p,k)<420) p.witness={killer:k.id,victim:v.id,body};
   const me=G.me;
-  if(v===me) youDied(k);
-  else if(me.alive&&dist(me,k)<VISION+30){G.sawKill={killer:k.id,victim:v.id};G.flash=.6;SFX.kill();}
+  if(k===me){
+    // like the bots, you land on your victim's spot, unless that would put you inside a wall
+    const ox=k.x,oy=k.y;k.x=v.x;k.y=v.y;if(!free(k.x,k.y)){k.x=ox;k.y=oy;}
+    k.killCd=25;G.myKills++;
+  }else{k.x=v.x+(k.x<v.x?-8:8);k.y=v.y+2;k.killCd=rand(20,27);k.hunt=null;k.path=[];k.goal=null;k.idle=.35;}
+  for(const p of G.players) if(p.alive&&!p.imp&&!p.isYou&&dist(p,k)<380) p.witness={killer:k.id,victim:v.id,body};
+  if(v===me) return startKillAnim(k,v,'victim',()=>{if(!checkWin()) toast('You are a ghost. Finish your tasks.');});
+  if(k===me) return startKillAnim(k,v,'killer',checkWin);
+  if(me.alive&&dist(me,k)<vision()+30){G.sawKill={killer:k.id,victim:v.id};G.flash=.6;SFX.kill();}
   checkWin();
+}
+const vision=()=>G.me&&G.me.imp?VISION*1.25:VISION;
+function killTarget(){
+  const me=G.me;if(!me||!me.imp||!me.alive||me.killCd>0) return null;
+  let best=null,bd=100;
+  for(const p of G.players){if(p===me||!p.alive||p.imp) continue;const d=dist(p,me);if(d<bd){bd=d;best=p;}}
+  return best;
 }
 function checkBodies(){
   for(const bd of G.bodies){
@@ -563,7 +576,7 @@ function showHUD(on){$('hud').hidden=!on;if(!on){$('stick').hidden=true;G.stick=
 function callMeeting(kind,caller,body){
   if(G.mode!=='play') return;
   closeTask();closeMap();
-  G.mode='splash';showHUD(false);$('deadNote').hidden=true;
+  G.mode='splash';showHUD(false);
   SFX.alarm();
   const who=caller.isYou?'You':caller.name;
   $('splashH').textContent=kind==='body'?'Dead body reported':'Emergency meeting';
@@ -678,7 +691,7 @@ function buildMeetingUI(){
     const t=document.createElement('div');t.className='tile'+(p.alive?'':' dead');t.dataset.id=p.id;
     const img=new Image();img.alt='';img.src=avatar(p.color,!p.alive);
     const who=document.createElement('div');who.className='who';
-    const nm=document.createElement('span');nm.className='nm';nm.textContent=p.name+(p.isYou?' (you)':'');who.appendChild(nm);
+    const nm=document.createElement('span');nm.className='nm';nm.textContent=p.name+(p.isYou?' (you)':'');if(G.me.imp&&p.imp) nm.style.color='#c8102e';who.appendChild(nm);
     if(p===M.caller){const pl=document.createElement('span');pl.className='pill';pl.textContent=M.kind==='body'?'Reported':'Called it';who.appendChild(pl);}
     const votes=document.createElement('div');votes.className='votes';who.appendChild(votes);
     const conf=document.createElement('span');conf.className='confirm';conf.hidden=true;
@@ -768,7 +781,7 @@ function startEject(out,tie){
   G.mode='eject';
   let text,sub='';
   if(out){
-    out.alive=false;out.ghost=!out.imp;out.path=[];out.hunt=null;
+    out.alive=false;out.ghost=!out.imp||out.isYou;out.path=[];out.hunt=null;
     const left=G.players.filter(p=>p.imp&&p.alive).length;
     text=`${out.isYou?'You were':out.name+' was'} ${out.imp?'':'not '}The Impostor.`;
     sub=`${left} Impostor${left===1?'':'s'} remain${left===1?'s':''}.`;
@@ -790,25 +803,88 @@ function updateEject(dt){
     if(!checkWin()){resetRound(false);G.mode='play';showHUD(true);if(E.who&&E.who.isYou) toast('You are a ghost now');}
   }
 }
-function youDied(k){
-  closeTask();closeMap();G.stun=2.4;SFX.kill();
-  $('deadImg').src=avatar(k.color);
-  $('deadText').textContent=`${k.name} got you. Your tasks still count, so finish them as a ghost.`;
-  $('deadNote').hidden=false;
-  setTimeout(()=>{$('deadNote').hidden=true;},2600);
+/* ---------- kill animation: plays when you kill or get killed ---------- */
+function startKillAnim(killer,victim,you,onEnd){
+  closeTask();closeMap();showHUD(false);
+  G.anim={t:0,dur:2.3,killer,victim,you,hit:false,blood:[],onEnd};
+}
+function drawKillAnim(dt){
+  const A=G.anim,t=A.t,c=ctx,HIT=.72;
+  c.setTransform(DPR,0,0,DPR,0,0);
+  const fade=Math.min(clamp(t/.18,0,1),clamp((A.dur-t)/.3,0,1));
+  c.fillStyle=`rgba(0,0,0,${.6*fade})`;c.fillRect(0,0,W,H);
+  const full=Math.min(H*.5,330,W*.62),open=1-Math.pow(1-clamp(t/.22,0,1),3);
+  const bh=full*open*clamp((A.dur-t)/.3,0,1);
+  if(bh<2) return;
+  const top=H/2-bh/2,S=full/150,floor=H/2+full*.33;
+  c.save();c.beginPath();c.rect(0,top,W,bh);c.clip();
+  const g=c.createLinearGradient(0,top,0,top+bh);g.addColorStop(0,'#2a0509');g.addColorStop(.5,'#6d0f1d');g.addColorStop(1,'#2a0509');
+  c.fillStyle=g;c.fillRect(0,top,W,bh);
+  c.strokeStyle='rgba(255,255,255,.08)';c.lineWidth=3;
+  for(let i=0;i<14;i++){const y=top+(i*37)%Math.max(bh,1),x=((i*173-t*900)%(W+300)+W+300)%(W+300)-150;c.beginPath();c.moveTo(x,y);c.lineTo(x+140,y);c.stroke();}
+  const vx=W/2+55*S;
+  const lunge=t<.45?0:t<HIT?1-Math.pow(1-(t-.45)/(HIT-.45),3):t<1.15?1:Math.max(0,1-(t-1.15)/.4);
+  const kx=W/2-70*S+lunge*52*S;
+  if(t>=HIT&&!A.hit){
+    A.hit=true;SFX.kill();
+    for(let i=0;i<22;i++) A.blood.push({x:vx,y:floor-30*S,vx:rand(-1,1.4)*230*S,vy:-rand(60,340)*S,r:rand(3,7)*S,land:false});
+  }
+  // victim: standing until the stab, then the lower half stays and the top flies off
+  if(t<HIT) drawCrew(c,vx,floor,A.victim.color,{scale:S,face:-1,phase:t>.55?Math.sin(t*60)*.4:0});
+  else{
+    c.save();c.translate(vx,floor);c.scale(-S,S);drawBody(c,0,0,A.victim.color);c.restore();
+    const f=clamp((t-HIT)/.9,0,1);
+    if(f<1){
+      c.save();c.globalAlpha=1-f*f;
+      c.translate(vx+f*120*S,floor-26*S-f*210*S+f*f*90*S);c.rotate(f*5);
+      c.beginPath();c.rect(-40*S,-40*S,80*S,40*S);c.clip();
+      drawCrew(c,0,26*S,A.victim.color,{scale:S,face:-1,noShadow:true});
+      c.restore();
+    }
+  }
+  for(const b of A.blood){
+    if(!b.land){b.x+=b.vx*dt;b.y+=b.vy*dt;b.vy+=900*S*dt;if(b.y>=floor+4*S){b.y=floor+rand(-2,6)*S;b.land=true;}}
+    c.fillStyle='#c0142b';c.beginPath();
+    if(b.land) c.ellipse(b.x,b.y,b.r*1.8,b.r*.6,0,0,Math.PI*2);else c.arc(b.x,b.y,b.r,0,Math.PI*2);
+    c.fill();
+  }
+  drawCrew(c,kx,floor,A.killer.color,{scale:S,face:1,phase:lunge>0&&lunge<1?t*22:0});
+  if(t>.36&&t<1.55){
+    c.save();c.translate(kx+14*S,floor-26*S);c.rotate(t<HIT?-.7+lunge*.7:0);
+    c.lineWidth=3;c.strokeStyle='#06070d';
+    rr(c,-4*S,-4*S,14*S,8*S,2*S);c.fillStyle='#4a2c1a';c.fill();c.stroke();
+    c.beginPath();c.moveTo(10*S,-5*S);c.lineTo(44*S,0);c.lineTo(10*S,5*S);c.closePath();c.fillStyle='#dfe6f2';c.fill();c.stroke();
+    if(A.hit){c.beginPath();c.moveTo(30*S,-2.5*S);c.lineTo(44*S,0);c.lineTo(30*S,2.5*S);c.closePath();c.fillStyle='#c0142b';c.fill();}
+    c.restore();
+  }
+  if(t>=HIT&&t<HIT+.14){c.fillStyle=`rgba(255,255,255,${(1-(t-HIT)/.14)*.7})`;c.fillRect(0,top,W,bh);}
+  c.fillStyle='#000';c.fillRect(0,top,W,4);c.fillRect(0,top+bh-4,W,4);
+  c.restore();
+  const cap=A.you==='victim'?`${A.killer.name} killed you`:`You killed ${A.victim.name}`;
+  c.globalAlpha=fade;c.font=`${Math.round(clamp(W/22,20,34))}px Bungee, "Arial Black", sans-serif`;c.textAlign='center';
+  c.lineWidth=6;c.strokeStyle='#000';c.strokeText(cap,W/2,top+bh+46);
+  c.fillStyle=A.you==='victim'?'#ff4d57':'#fff';c.fillText(cap,W/2,top+bh+46);c.globalAlpha=1;
 }
 function loadRecord(){try{return JSON.parse(localStorage.getItem('sus-station-record'))||{w:0,l:0};}catch(e){return {w:0,l:0};}}
 function showRecord(){const r=loadRecord();$('record').textContent=r.w+r.l?`Your record on this device: ${r.w} won, ${r.l} lost`:'';}
 function saveRecord(win){const r=loadRecord();win?r.w++:r.l++;try{localStorage.setItem('sus-station-record',JSON.stringify(r));}catch(e){}showRecord();}
-function endGame(win,reason){
-  G.mode='over';closeTask();closeMap();showHUD(false);
-  for(const id of ['splash','meeting','eject','deadNote']) $(id).hidden=true;
+// crewWon is about the teams; whether that is a Victory depends on which side you were on
+function endGame(crewWon,reason){
+  const win=crewWon!==G.me.imp;
+  G.mode='over';G.anim=null;closeTask();closeMap();showHUD(false);
+  for(const id of ['splash','meeting','eject']) $(id).hidden=true;
   const h=$('overH');h.textContent=win?'Victory':'Defeat';h.className=win?'win':'lose';
   $('overReason').textContent=reason;
   const imps=G.players.filter(p=>p.imp),box=$('overImps');box.textContent='';
   for(const p of imps){const i=new Image();i.src=avatar(p.color);i.alt=p.name;box.appendChild(i);}
-  $('overImpText').textContent=imps.length===1?`The Impostor was ${imps[0].name}.`:`The Impostors were ${imps.map(p=>p.name).join(' and ')}.`;
-  $('overStats').textContent=`You finished ${G.myDone} of ${TASKS_EACH} tasks. Crew progress: ${Math.round(G.done/G.total*100)}%. ${G.me.alive?'You survived.':'You did not survive.'}`;
+  const partner=imps.find(p=>!p.isYou);
+  $('overImpText').textContent=G.me.imp
+    ?(partner?`You and ${partner.name} were the Impostors.`:'You were the Impostor.')
+    :imps.length===1?`The Impostor was ${imps[0].name}.`:`The Impostors were ${imps.map(p=>p.name).join(' and ')}.`;
+  const pct=Math.round(G.done/G.total*100);
+  $('overStats').textContent=G.me.imp
+    ?`You killed ${G.myKills} crewmate${G.myKills===1?'':'s'}. Crew progress: ${pct}%. ${G.me.alive?'You were never caught.':'You were voted out.'}`
+    :`You finished ${G.myDone} of ${TASKS_EACH} tasks. Crew progress: ${pct}%. ${G.me.alive?'You survived.':'You did not survive.'}`;
   $('over').hidden=false;
   if(win) SFX.win();else SFX.lose();
   saveRecord(win);
@@ -894,12 +970,12 @@ function drawEnt(p){
   const ghost=!p.alive;
   drawCrew(ctx,p.x,p.y,p.color,{face:p.face,phase:ghost?G.t*3+p.id:(p.moving?p.phase:0),ghost,alpha:ghost?.5:1});
   ctx.font='700 14px "Atkinson Hyperlegible", sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#000';
-  ctx.globalAlpha=ghost?.6:1;ctx.strokeText(p.name,p.x,p.y-66);ctx.fillStyle='#fff';ctx.fillText(p.name,p.x,p.y-66);ctx.globalAlpha=1;
+  ctx.globalAlpha=ghost?.6:1;ctx.strokeText(p.name,p.x,p.y-66);ctx.fillStyle=G.me.imp&&p.imp?'#ff4d57':'#fff';ctx.fillText(p.name,p.x,p.y-66);ctx.globalAlpha=1;
 }
 const fogCv=document.createElement('canvas'),fctx=fogCv.getContext('2d');
 function drawFog(Z){
   if(fogCv.width!==cv.width||fogCv.height!==cv.height){fogCv.width=cv.width;fogCv.height=cv.height;}
-  const sx=(W/2+(G.me.x-G.cam.x)*Z)*DPR,sy=(H/2+(G.me.y-G.cam.y)*Z)*DPR,R=VISION*Z*DPR;
+  const sx=(W/2+(G.me.x-G.cam.x)*Z)*DPR,sy=(H/2+(G.me.y-G.cam.y)*Z)*DPR,R=vision()*Z*DPR;
   fctx.globalCompositeOperation='source-over';fctx.clearRect(0,0,fogCv.width,fogCv.height);
   fctx.fillStyle='rgba(3,4,9,.88)';fctx.fillRect(0,0,fogCv.width,fogCv.height);
   fctx.globalCompositeOperation='destination-out';
@@ -913,7 +989,7 @@ function renderWorld(dt){
   ctx.setTransform(DPR*Z,0,0,DPR*Z,DPR*(W/2-G.cam.x*Z),DPR*(H/2-(G.cam.y-30)*Z));
   drawMap();drawStations();
   const seeAll=!me.alive,list=[];
-  const near=e=>seeAll||dist(e,me)<VISION+30;
+  const near=e=>seeAll||dist(e,me)<vision()+30;
   for(const bd of G.bodies) if(near(bd)) list.push({y:bd.y,d:()=>drawBody(ctx,bd.x,bd.y,bd.color)});
   for(const p of G.players){
     if(p.isYou) continue;
@@ -925,6 +1001,7 @@ function renderWorld(dt){
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.d());
   if(me.alive) drawFog(Z);
   if(G.flash>0){G.flash-=dt;ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(200,0,20,${Math.max(0,G.flash)*.5})`;ctx.fillRect(0,0,W,H);}
+  if(G.anim) drawKillAnim(dt);
 }
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#070913';ctx.fillRect(0,0,W,H);
@@ -1176,18 +1253,19 @@ let toastT=0;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1500);}
 function useTarget(){
   const me=G.me;let best=null,bd=85;
-  for(const t of me.tasks){if(t.done) continue;const s=STATIONS[t.st],d=Math.hypot(me.x-s.x,me.y-(s.y+24));if(d<bd){bd=d;best={type:'task',st:s.i};}}
+  for(const t of me.imp?[]:me.tasks){if(t.done) continue;const s=STATIONS[t.st],d=Math.hypot(me.x-s.x,me.y-(s.y+24));if(d<bd){bd=d;best={type:'task',st:s.i};}}
   if(!best&&me.alive&&!G.buttonUsed&&Math.hypot(me.x-BUTTON.x,me.y-BUTTON.y)<95) best={type:'button'};
   return best;
 }
 function reportTarget(){return G.me.alive?G.bodies.find(b=>dist(b,G.me)<130)||null:null;}
 function doUse(){
-  if(G.mode!=='play'||G.task||G.stun>0) return;
+  if(G.mode!=='play'||G.task||G.anim) return;
   const u=useTarget();if(!u) return;
   closeMap();
   if(u.type==='task') openTask(u.st);else{G.buttonUsed=true;callMeeting('button',G.me,null);}
 }
-function doReport(){if(G.mode!=='play'||G.task) return;const b=reportTarget();if(b) callMeeting('body',G.me,b);}
+function doReport(){if(G.mode!=='play'||G.task||G.anim) return;const b=reportTarget();if(b) callMeeting('body',G.me,b);}
+function doKill(){if(G.mode!=='play'||G.task||G.anim) return;const v=killTarget();if(v) kill(G.me,v);}
 const hudState={};
 function setHud(key,val,fn){if(hudState[key]!==val){hudState[key]=val;fn(val);}}
 function updateHUD(){
@@ -1197,23 +1275,30 @@ function updateHUD(){
     $('useLbl').textContent=v==='button'?'Alarm':'Use';b.setAttribute('aria-label',v==='button'?'Call emergency meeting (E)':'Use (E)');
   });
   setHud('rep',!!r,v=>{$('btnReport').disabled=!v;});
+  const me=G.me,cdLeft=Math.ceil(Math.max(0,me.killCd));
+  setHud('kill',me.imp&&me.alive?(killTarget()?'t':'n')+cdLeft:'x',v=>{
+    const b=$('btnKill');b.hidden=v==='x';if(v==='x') return;
+    b.disabled=v[0]!=='t';$('killCd').hidden=cdLeft<=0;$('killCd').textContent=cdLeft;
+  });
   setHud('bar',G.done,v=>{$('bar').style.width=Math.min(100,v/G.total*100)+'%';});
-  setHud('list',G.me.tasks.map(t=>t.done?1:0).join('')+G.me.alive,()=>{
-    const ul=$('tlist');ul.textContent='';
-    for(const t of G.me.tasks){
-      const s=STATIONS[t.st],li=document.createElement('li');
-      if(t.done) li.className='done';
-      li.textContent=`${t.done?'✓ ':''}${ROOMS[s.room].name}: ${s.name}`;ul.appendChild(li);
+  setHud('list',G.me.tasks.map(t=>t.done?1:0).join('')+G.me.alive+G.me.imp,()=>{
+    const ul=$('tlist'),note=(cls,text)=>{const li=document.createElement('li');li.className=cls;li.textContent=text;ul.appendChild(li);};
+    ul.textContent='';
+    $('tlHead').textContent=me.imp?'Fake tasks':'Your tasks';
+    $('tlCount').textContent=me.imp?'':`${G.myDone}/${TASKS_EACH}`;
+    if(me.imp){
+      note('note imp',me.alive?'You are the Impostor. Kill crewmates when no one is watching, and stand at fake tasks to blend in.':'You were voted out. Watch your partner finish the job.');
+      const partner=G.players.find(p=>p.imp&&!p.isYou);if(partner) note('imp',`Your partner: ${partner.name}`);
     }
-    if(!G.me.alive){const li=document.createElement('li');li.className='note';li.textContent='You are a ghost. Your tasks still count.';ul.appendChild(li);}
-    $('tlCount').textContent=`${G.myDone}/${TASKS_EACH}`;
+    for(const t of me.tasks){const s=STATIONS[t.st];note(me.imp?'fake':t.done?'done':'',`${t.done?'✓ ':''}${ROOMS[s.room].name}: ${s.name}`);}
+    if(!me.alive&&!me.imp) note('note','You are a ghost. Your tasks still count.');
   });
 }
 
 /* ---------- controls ---------- */
 const stickEl=$('stick'),knob=$('knob');
 cv.addEventListener('pointerdown',e=>{
-  if(G.mode!=='play'||G.task||G.stick.on) return;
+  if(G.mode!=='play'||G.task||G.anim||G.stick.on) return;
   G.stick={on:true,id:e.pointerId,ox:e.clientX,oy:e.clientY,x:0,y:0};
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   stickEl.style.left=e.clientX+'px';stickEl.style.top=e.clientY+'px';knob.style.transform='';stickEl.hidden=false;
@@ -1239,6 +1324,7 @@ addEventListener('keydown',e=>{
   if(k==='e'||k===' ') doUse();
   else if(k==='r') doReport();
   else if(k==='m') toggleMap();
+  else if(k==='q') doKill();
 });
 addEventListener('keyup',e=>{G.keys[e.key.toLowerCase()]=false;});
 addEventListener('blur',()=>{G.keys={};});
@@ -1251,7 +1337,8 @@ function inputVec(){
 }
 function updatePlayer(dt){
   const me=G.me;
-  if(G.stun>0){G.stun-=dt;me.moving=false;return;}
+  if(me.imp&&me.alive&&me.killCd>0) me.killCd-=dt;
+  for(const t of me.tasks){const s=STATIONS[t.st];if(Math.hypot(me.x-s.x,me.y-(s.y+24))<85) me.lastTaskRoom=s.room;}
   if(G.task){me.moving=false;return;}
   const v=inputVec();
   if(v.x||v.y){
@@ -1264,11 +1351,12 @@ function updatePlayer(dt){
   const r=roomAt(me.x,me.y);
   if(r>=0&&r!==G.lastRoom){G.lastRoom=r;toast(ROOMS[r].name);}
 }
-function openMap(){if(G.mode!=='play'||G.task) return;G.mapOpen=true;$('mapWin').hidden=false;sizeMap();}
+function openMap(){if(G.mode!=='play'||G.task||G.anim) return;G.mapOpen=true;$('mapWin').hidden=false;sizeMap();}
 function closeMap(){G.mapOpen=false;$('mapWin').hidden=true;}
 function toggleMap(){if(G.mapOpen) closeMap();else openMap();}
 $('btnUse').addEventListener('click',doUse);
 $('btnReport').addEventListener('click',doReport);
+$('btnKill').addEventListener('click',doKill);
 $('btnMap').addEventListener('click',toggleMap);
 $('mapClose').addEventListener('click',closeMap);
 $('mapWin').addEventListener('click',e=>{if(e.target===$('mapWin')) closeMap();});
@@ -1296,15 +1384,19 @@ for(const col of COLORS){
   swatches.appendChild(b);
 }
 for(const b of $('impSeg').children) b.addEventListener('click',()=>{G.impCount=+b.dataset.n;for(const x of $('impSeg').children) x.setAttribute('aria-pressed',String(x===b));});
+for(const b of $('roleSeg').children) b.addEventListener('click',()=>{G.role=b.dataset.r;for(const x of $('roleSeg').children) x.setAttribute('aria-pressed',String(x===b));});
 function startGame(){
   for(const k in hudState) delete hudState[k];
   newGame();
-  for(const id of ['title','over','meeting','eject','splash','deadNote']) $(id).hidden=true;
+  for(const id of ['title','over','meeting','eject','splash']) $(id).hidden=true;
   closeTask();closeMap();
-  const n=G.impCount;
-  $('revealP').innerHTML=`There ${n===1?'is':'are'} <b>${n} Impostor${n===1?'':'s'}</b> among us.`;
+  const n=G.impCount,imp=G.me.imp,partner=G.players.find(p=>p.imp&&!p.isYou);
+  const rh=$('revealH');rh.textContent=imp?'Impostor':'Crewmate';rh.classList.toggle('imp',imp);
+  if(imp) $('revealP').textContent=partner?`Your partner is ${partner.name}. Kill the crew without getting caught.`:'Kill the crew without getting caught.';
+  else $('revealP').innerHTML=`There ${n===1?'is':'are'} <b>${n} Impostor${n===1?'':'s'}</b> among us.`;
   const lu=$('lineup');lu.textContent='';
-  const others=G.players.slice(1);
+  // an Impostor only sees the Impostor team, a crewmate sees everyone
+  const others=G.players.slice(1).filter(p=>!imp||p.imp);
   for(const p of [...others.slice(0,4),G.me,...others.slice(4)]){const i=new Image();i.src=avatar(p.color);i.alt=p.isYou?'You':p.name;if(p.isYou) i.className='me';lu.appendChild(i);}
   G.mode='reveal';$('reveal').hidden=false;
   clearTimeout(G.revealT);G.revealT=setTimeout(beginPlay,3200);
@@ -1324,7 +1416,11 @@ $('toTitle').addEventListener('click',()=>{$('over').hidden=true;G.mode='title';
 let last=performance.now();
 function frame(now){
   const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
-  if(G.mode==='play'){
+  if(G.mode==='play'&&G.anim){
+    // the ship holds still while the kill animation plays
+    G.anim.t+=dt;
+    if(G.anim.t>=G.anim.dur){const A=G.anim;G.anim=null;showHUD(true);if(A.onEnd) A.onEnd();}
+  }else if(G.mode==='play'){
     G.t+=dt;
     updatePlayer(dt);
     for(const p of G.players){

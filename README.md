@@ -49,4 +49,4 @@ Your best score of the session is kept in `localStorage`.
 
 ## Also in this repo: Sus Station
 
-[`among-us/`](among-us/) is a single-player, Among Us-style game: do tasks on a spaceship, report bodies, and vote the Impostor out in meetings with seven bot crewmates. Open `among-us/index.html` in a browser to play. See [`among-us/README.md`](among-us/README.md) for rules and controls.
+[`among-us/`](among-us/) is a single-player, Among Us-style game with seven bot crewmates. Play as a crewmate who does tasks and votes out the Impostor, or as the Impostor who kills without getting caught. Open `among-us/index.html` in a browser to play. See [`among-us/README.md`](among-us/README.md) for rules and controls.
