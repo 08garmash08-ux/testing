@@ -46,3 +46,16 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+## Android app
+
+`android/` holds a tiny Android app that shows **Hello** in the middle of the screen.
+
+- **Get the APK** — every push that touches `android/` runs the *Android APK* workflow; download `hello-debug-apk` from the run's artifacts and install it on your phone.
+- **Build it yourself** (JDK 17+ and the Android SDK):
+
+  ```bash
+  cd android
+  ./gradlew assembleDebug
+  # APK: android/app/build/outputs/apk/debug/app-debug.apk
+  ```
