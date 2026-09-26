@@ -46,3 +46,7 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+## Also in this repo: Sus Station
+
+[`among-us/`](among-us/) is a single-player, Among Us-style game: do tasks on a spaceship, report bodies, and vote the Impostor out in meetings with seven bot crewmates. Open `among-us/index.html` in a browser to play. See [`among-us/README.md`](among-us/README.md) for rules and controls.
