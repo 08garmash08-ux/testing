@@ -46,3 +46,7 @@ A face only counts when the skin blob actually fills its own box (density), has 
 The six traits are weighted into one mog rating. Same photo, same score — so a retake is a real retake.
 
 Your best score of the session is kept in `localStorage`.
+
+## Also in this repo
+
+[`button-toy/`](button-toy/) holds a 3D-printable toy push button that says **CLICK FOR 1M MONEY** and really presses and springs back. It is a single `.3mf` file with three parts and needs no supports.
