@@ -195,7 +195,6 @@ kbd{font:12px var(--body);background:var(--panel-2);border:1px solid var(--line)
     <p class="tag">You and seven bots crew a ship, and someone aboard is the Impostor. It might be you. Do your tasks or hunt the crew, report the bodies, and win the vote.</p>
     <div class="field"><span>Your color</span><div class="swatches" id="swatches" role="group" aria-label="Your color"></div></div>
     <div class="field"><span>Impostors</span><div class="seg" id="impSeg" role="group" aria-label="Number of impostors"><button data-n="1" aria-pressed="true">1</button><button data-n="2" aria-pressed="false">2</button></div></div>
-    <div class="field"><span>Your role</span><div class="seg" id="roleSeg" role="group" aria-label="Your role"><button data-r="random" aria-pressed="true">Random</button><button data-r="crew" aria-pressed="false">Crewmate</button><button data-r="imp" aria-pressed="false">Impostor</button></div></div>
     <button class="btn primary" id="play">Play</button>
     <p class="keys"><span><kbd>WASD</kbd> or drag to move</span><span><kbd>E</kbd> use</span><span><kbd>R</kbd> report</span><span><kbd>Q</kbd> kill</span><span><kbd>M</kbd> map</span></p>
     <p class="record" id="record"></p>
@@ -414,7 +413,7 @@ function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=inne
 addEventListener('resize',resize);resize();
 
 const VISION=340,SPEED=235,BOT_SPEED=200,TASKS_EACH=5;
-const G={mode:'title',t:0,players:[],bodies:[],me:null,done:0,total:1,myDone:0,buttonUsed:false,impCount:1,myColor:'red',role:'random',myKills:0,anim:null,
+const G={mode:'title',t:0,players:[],bodies:[],me:null,done:0,total:1,myDone:0,buttonUsed:false,impCount:1,myColor:'red',myKills:0,anim:null,
   cam:{x:1200,y:250},keys:{},stick:{on:false,x:0,y:0},task:null,mapOpen:false,round:0,meet:null,ej:null,lastRoom:-1,stun:0,flash:0,sawKill:null};
 
 function makePlayer(col,i,isYou){
@@ -427,8 +426,8 @@ function newGame(){
   const cols=[mine,...shuffle(COLORS.filter(c=>c!==mine)).slice(0,7)];
   G.players=cols.map((c,i)=>makePlayer(c,i,i===0));
   G.me=G.players[0];
-  // Random gives you the same odds as any other seat; the title screen can force a role
-  const meImp=G.role==='imp'||(G.role==='random'&&Math.random()<G.impCount/G.players.length);
+  // your role is random, with the same odds as any other seat
+  const meImp=Math.random()<G.impCount/G.players.length;
   G.me.imp=meImp;
   shuffle(G.players.slice(1)).slice(0,G.impCount-(meImp?1:0)).forEach(b=>b.imp=true);
   for(const p of G.players) p.tasks=shuffle(STATIONS.map(s=>s.i)).slice(0,TASKS_EACH).map(st=>({st,done:false}));
@@ -1384,7 +1383,6 @@ for(const col of COLORS){
   swatches.appendChild(b);
 }
 for(const b of $('impSeg').children) b.addEventListener('click',()=>{G.impCount=+b.dataset.n;for(const x of $('impSeg').children) x.setAttribute('aria-pressed',String(x===b));});
-for(const b of $('roleSeg').children) b.addEventListener('click',()=>{G.role=b.dataset.r;for(const x of $('roleSeg').children) x.setAttribute('aria-pressed',String(x===b));});
 function startGame(){
   for(const k in hudState) delete hudState[k];
   newGame();

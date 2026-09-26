@@ -4,16 +4,13 @@ A single-player, Among Us-style game in one HTML file. You and seven bots crew a
 
 ## Roles
 
-On the title screen, **Your role** decides what you play:
-
-- **Random** (default): you get the same odds as every other seat, so with one Impostor you are the Impostor in about 1 game out of 8, and 1 in 4 with two.
-- **Crewmate** or **Impostor** forces that role.
+Your role is random every game, with the same odds as every other seat: with one Impostor you are the Impostor in about 1 game out of 8, and 1 in 4 with two.
 
 The role screen at the start tells you which one you got. As the Impostor you also see your partner's name in red.
 
 ## How to play as a crewmate
 
-1. Pick your color, the number of Impostors, and your role, then press **Play**.
+1. Pick your color and the number of Impostors, then press **Play**.
 2. Walk to the yellow consoles and press **Use** to do your tasks. The bar at the top fills as the whole crew finishes tasks.
 3. Find a body? Press **Report**. Something feels off? Press the red **emergency button** in Cafeteria (once per game).
 4. In the meeting, read what the bots say, accuse someone from the quick-chat buttons, then vote or skip.
