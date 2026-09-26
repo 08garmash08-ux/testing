@@ -83,6 +83,19 @@
     transition:opacity .35s,transform .35s;
   }
   .toast.show{opacity:1;transform:translate(-50%,0)}
+  .tools{
+    position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+    display:flex;gap:3px;padding:4px;border-radius:999px;max-width:calc(100% - 24px);
+    background:rgba(12,20,17,.84);border:1px solid var(--edge);
+  }
+  .tools[hidden]{display:none}
+  .tools button{
+    font:inherit;font-size:13px;font-weight:500;color:var(--ink-dim);white-space:nowrap;
+    background:transparent;border:0;border-radius:999px;padding:6px 13px;cursor:pointer;
+    transition:background-color .2s,color .2s;
+  }
+  .tools button:hover{color:var(--ink)}
+  .tools button[aria-pressed="true"]{background:var(--ink);color:var(--desk)}
 
   footer{display:flex;flex-direction:column;gap:6px}
   .readout{display:flex;align-items:center;justify-content:space-between;gap:8px 24px;flex-wrap:wrap}
@@ -102,7 +115,8 @@
     h1{font-size:22px}
     #viz{width:64px}
     .controls{width:100%}
-    .toggle{padding:5px 10px;font-size:12.5px;gap:6px}
+    .toggle{padding:5px 9px;font-size:12.5px;gap:6px}
+    .tools button{padding:6px 9px;font-size:12.5px}
     .dock kbd,.toggle .wide{display:none}
     .dock button{padding:7px 10px}
     .meter .bar{width:96px}
@@ -116,11 +130,12 @@
     <div class="brand">
       <h1>Quiet Hands</h1>
       <canvas id="viz" aria-hidden="true"></canvas>
-      <p>Nine trays of soft, crunchy, glassy things.</p>
+      <p>Ten trays of soft, crunchy, whispery things.</p>
     </div>
     <div class="controls" role="group" aria-label="Sound and play">
       <button type="button" class="toggle" id="rain" aria-pressed="false">Rain</button>
       <button type="button" class="toggle" id="fire" aria-pressed="false">Fire</button>
+      <button type="button" class="toggle" id="whisper" aria-pressed="false" title="Soft whispers drifting from ear to ear">Whispers</button>
       <button type="button" class="toggle" id="bin" aria-pressed="true" title="Binaural 3D sound, best on headphones">3D<span class="wide"> sound</span></button>
       <button type="button" class="toggle" id="auto" aria-pressed="false" title="A ghost hand plays the tray for you">Autoplay</button>
       <button type="button" class="toggle" id="sound" aria-pressed="true">Sound</button>
@@ -137,11 +152,18 @@
     <button type="button" data-tray="zen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c3-2 6 2 9 0s6-2 9 0M3 12c3-2 6 2 9 0M3 17c3-2 5 2 7 0"/><circle cx="17.5" cy="16" r="3"/></svg>Zen garden<kbd>7</kbd></button>
     <button type="button" data-tray="keys" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7.5 14h9"/></svg>Keyboard<kbd>8</kbd></button>
     <button type="button" data-tray="ice" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l6 7-3 3 4 6M10 11l6-2 4 4M16 9l1-5M7 14l-3 2"/></svg>Ice<kbd>9</kbd></button>
+    <button type="button" data-tray="mic" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a5 5 0 0 1 10 0c0 3-2 4-3 6s-1 5-4 5a3 3 0 0 1-3-2"/><path d="M11 10a2 2 0 0 1 4 0c0 1.5-1.5 2-2 3"/></svg>Ear mic<kbd>0</kbd></button>
   </nav>
 
   <main class="stage" id="stage">
     <canvas id="tray" tabindex="0" aria-label="Bubble wrap tray"></canvas>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="tools" id="tools" role="group" aria-label="Microphone tools" hidden>
+      <button type="button" data-tool="brush" aria-pressed="true">Brush</button>
+      <button type="button" data-tool="fingers" aria-pressed="false">Fingertips</button>
+      <button type="button" data-tool="fluffy" aria-pressed="false">Fluffy cover</button>
+      <button type="button" data-tool="whisper" aria-pressed="false">Whisper</button>
+    </div>
   </main>
 
   <footer>
@@ -149,7 +171,7 @@
       <div class="stats" id="stats"></div>
       <div class="meter"><span id="meterLabel">Sheet</span><span class="bar"><i id="meterFill"></i></span><output id="meterVal">0%</output></div>
     </div>
-    <p class="hint"><span id="ear">Headphones on: the sound is binaural 3D and follows your hand. It starts on your first touch. </span><span id="hintText"></span> <span id="keysHint"><kbd>Space</kbd> plays one move, <kbd>1</kbd>–<kbd>9</kbd> switch trays, <kbd>A</kbd> autoplay.</span></p>
+    <p class="hint"><span id="ear">Headphones on: the sound is binaural 3D and follows your hand. It starts on your first touch. </span><span id="hintText"></span> <span id="keysHint"><kbd>Space</kbd> plays one move, <kbd>1</kbd>–<kbd>0</kbd> switch trays, <kbd>A</kbd> autoplay, <kbd>W</kbd> whispers.</span></p>
   </footer>
 </div>
 
@@ -174,6 +196,9 @@ const $bin = document.getElementById('bin');
 const $auto = document.getElementById('auto');
 const $viz = document.getElementById('viz');
 const $keysHint = document.getElementById('keysHint');
+const $whisper = document.getElementById('whisper');
+const $tools = document.getElementById('tools');
+const toolBtns = [...document.querySelectorAll('#tools button')];
 const tabs = [...document.querySelectorAll('.dock button')];
 const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -212,7 +237,7 @@ function roundRect(g, x, y, w, h, r) {
 
 /* ---------- saved totals ---------- */
 const STORE = 'quiet-hands:v1';
-const stats = { popped: 0, sheets: 0, bestRun: 0, slices: 0, thinnest: 0, blocks: 0, pockets: 0, batches: 0, crunches: 0, bricks: 0, taps: 0, plucks: 0, drops: 0, nibbles: 0, koi: 2, gardens: 0, keys: 0, boards: 0, cracks: 0, zaps: 0, shattered: 0 };
+const stats = { popped: 0, sheets: 0, bestRun: 0, slices: 0, thinnest: 0, blocks: 0, pockets: 0, batches: 0, crunches: 0, bricks: 0, taps: 0, plucks: 0, drops: 0, nibbles: 0, koi: 2, gardens: 0, keys: 0, boards: 0, cracks: 0, zaps: 0, shattered: 0, earTaps: 0, whispers: 0, tingles: 0 };
 try {
   const s = JSON.parse(localStorage.getItem(STORE) || '{}');
   for (const k in stats) if (Number.isFinite(s[k])) stats[k] = s[k];
@@ -225,20 +250,620 @@ function save() {
 function remember(key, val) { try { localStorage.setItem('quiet-hands:' + key, val); } catch (e) {} }
 function recall(key) { try { return localStorage.getItem('quiet-hands:' + key); } catch (e) { return null; } }
 
-/* ---------- sound: everything is synthesised, nothing is sampled ---------- */
-// resonant modes for the tapping tray: [frequency ratio, level, decay seconds]
-const TAP_MATS = {
-  wood:    { f0: 820,  modes: [[1, 0.5, 0.07], [2.61, 0.18, 0.04], [4.8, 0.08, 0.025]], nf: 1800, nq: 1.5, np: 0.25, nd: 0.03, scr: [2200, 1.2] },
-  glass:   { f0: 1560, modes: [[1, 0.12, 0.9], [2.32, 0.07, 0.6], [4.25, 0.04, 0.35], [6.63, 0.02, 0.2]], nf: 5000, nq: 2, np: 0.1, nd: 0.01, scr: [4200, 2.2] },
-  ceramic: { f0: 1180, modes: [[1, 0.18, 0.35], [2.71, 0.08, 0.22], [5.2, 0.03, 0.12]], nf: 3000, nq: 1.5, np: 0.15, nd: 0.015, scr: [3200, 1.6] },
-  tin:     { f0: 520,  modes: [[1, 0.12, 0.45], [1.59, 0.1, 0.4], [2.14, 0.08, 0.32], [2.65, 0.06, 0.25], [3.9, 0.04, 0.18]], nf: 3500, nq: 1, np: 0.2, nd: 0.03, scr: [3000, 2.5] },
-  mat:     { f0: 300,  modes: [[1, 0.25, 0.03]], nf: 900, nq: 0.8, np: 0.25, nd: 0.02, scr: [1800, 0.9] },
-  sponge:  { f0: 0, modes: [], nf: 1500, nq: 0.7, np: 0.2, nd: 0.07, scr: [1300, 0.8] },
-  comb:    { f0: 0, modes: [], nf: 3000, nq: 1, np: 0.15, nd: 0.01, scr: [3000, 1] }
-};
+/* ---------- procedural recordings ---------- */
+// Real ASMR is made of micro-detail: thousands of tiny clicks, crackles and short resonances,
+// each one a little different, picked up very close to the microphone. Every sound here is
+// rendered ahead of time into short "recordings" built that way, then played back with small
+// random changes, so no two pops, taps or crunches are the same.
+const SR = 48000;
+const BANK = {};
+const bankJobs = [];
+const P = {};
+const pick = a => a[(Math.random() * a.length) | 0];
 
+function coef(type, f, q, g) {
+  const w = (TAU * Math.min(f, SR * 0.45)) / SR, cs = Math.cos(w), sn = Math.sin(w), al = sn / (2 * q);
+  let b0, b1, b2, a0, a1, a2;
+  if (type === 'lp') { b0 = (1 - cs) / 2; b1 = 1 - cs; b2 = b0; a0 = 1 + al; a1 = -2 * cs; a2 = 1 - al; }
+  else if (type === 'hp') { b0 = (1 + cs) / 2; b1 = -(1 + cs); b2 = b0; a0 = 1 + al; a1 = -2 * cs; a2 = 1 - al; }
+  else if (type === 'bp') { b0 = al; b1 = 0; b2 = -al; a0 = 1 + al; a1 = -2 * cs; a2 = 1 - al; }
+  else { const A = Math.pow(10, (g || 0) / 40); b0 = 1 + al * A; b1 = -2 * cs; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cs; a2 = 1 - al / A; }
+  return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+}
+function filt(x, type, f, q, g) {
+  const [b0, b1, b2, a1, a2] = coef(type, f, q, g);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < x.length; i++) { const v = x[i], y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = v; y2 = y1; y1 = y; x[i] = y; }
+  return x;
+}
+// a filter whose frequency moves over time (fAt gives the frequency at sample i)
+function filtTV(x, type, fAt, q) {
+  const B = 64;
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let s = 0; s < x.length; s += B) {
+    const [b0, b1, b2, a1, a2] = coef(type, fAt(s), q), e = Math.min(x.length, s + B);
+    for (let i = s; i < e; i++) { const v = x[i], y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = v; y2 = y1; y1 = y; x[i] = y; }
+  }
+  return x;
+}
+function norm(x, peak) {
+  let m = 0;
+  for (let i = 0; i < x.length; i++) { const a = x[i] < 0 ? -x[i] : x[i]; if (a > m) m = a; }
+  if (m > 0) { const k = peak / m; for (let i = 0; i < x.length; i++) x[i] *= k; }
+  return x;
+}
+// bring a texture to a steady loudness, without letting its loudest crackle clip
+function normRms(x, rms) {
+  let s = 0, m = 0;
+  for (let i = 0; i < x.length; i++) { s += x[i] * x[i]; const a = x[i] < 0 ? -x[i] : x[i]; if (a > m) m = a; }
+  const r = Math.sqrt(s / x.length);
+  if (r > 0) { const k = Math.min(rms / r, 0.92 / m); for (let i = 0; i < x.length; i++) x[i] *= k; }
+  return x;
+}
+function white(n) { const x = new Float32Array(n); for (let i = 0; i < n; i++) x[i] = Math.random() * 2 - 1; return x; }
+function burstNoise(ms, frac = 4) {
+  const n = Math.max(4, Math.round((SR * ms) / 1000)), x = new Float32Array(n);
+  for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n / frac));
+  return x;
+}
+function add(dst, src, pos, amp) {
+  const e = Math.min(src.length, dst.length - pos);
+  for (let i = Math.max(0, -pos); i < e; i++) dst[pos + i] += src[i] * amp;
+}
+// one tiny event: a burst of noise a fraction of a millisecond long, coloured by a resonance
+function tick(ms, f, q, hp) {
+  const n = Math.max(4, Math.round((SR * ms) / 1000)), ringN = Math.round(Math.min(0.02, (q / (Math.PI * f)) * 5) * SR), x = new Float32Array(n + ringN);
+  for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * Math.exp(-i / Math.max(1, n / 3));
+  filt(x, 'bp', f, q);
+  if (hp) filt(x, 'hp', hp, 0.7);
+  return norm(x, 1);
+}
+function pool(n, gen) { const a = []; for (let i = 0; i < n; i++) a.push(gen(i)); return a; }
+function sprinkle(x, pl, pos, amp) { add(x, pick(pl), pos, Math.random() < 0.5 ? amp : -amp); }
+// decaying resonances: [frequency, decay seconds, level, optional beat Hz for a shimmering pair]
+function ring(x, pos, list, amp) {
+  for (const [f, d, g, beat] of list) {
+    const n = Math.min(x.length - pos, Math.round(d * SR * 7)), w = (TAU * f) / SR, wb = beat ? (TAU * (f + beat)) / SR : 0, k = Math.exp(-1 / (d * SR)), att = Math.round(SR * 0.0002);
+    let e = amp * g;
+    for (let i = 0; i < n; i++) {
+      let v = Math.sin(w * i);
+      if (beat) v = 0.6 * v + 0.4 * Math.sin(wb * i);
+      x[pos + i] += e * v * (i < att ? i / att : 1);
+      e *= k;
+    }
+  }
+}
+// a bubble closing up: a decaying tone that slides upward (the sound of every drip and plip)
+function bubble(f0, rise, d) {
+  const n = Math.round(SR * d * 7), x = new Float32Array(n), ka = Math.exp(-1 / (SR * d)), kq = Math.exp(-1 / (SR * d * 1.2)), w0 = (TAU * f0) / SR;
+  let ph = 0, a = 1, q = 1;
+  for (let i = 0; i < n; i++) {
+    ph += w0 * (1 + (rise - 1) * (1 - q));
+    x[i] = Math.sin(ph) * a * (i < 24 ? i / 24 : 1);
+    a *= ka; q *= kq;
+  }
+  return x;
+}
+// clustered event times: each event briefly raises the chance of more, the way crackles come in bursts
+function events(sec, base, jump, fade, cap) {
+  const out = [];
+  let t = 0, r = base;
+  for (;;) {
+    const dt = -Math.log(1 - Math.random()) / r;
+    t += dt;
+    if (t >= sec) break;
+    r = base + (r - base) * Math.exp(-dt * fade);
+    out.push(t);
+    r = Math.min(cap, r + jump * Math.random());
+  }
+  return out;
+}
+// a smooth random wobble between 0 and 1
+function wobble(n, hz) {
+  const step = SR / hz, pts = new Float32Array(Math.ceil(n / step) + 3);
+  for (let i = 0; i < pts.length; i++) pts[i] = Math.random();
+  return i => { const p = i / step, k = Math.floor(p), f = p - k, s = (1 - Math.cos(f * Math.PI)) / 2; return pts[k] * (1 - s) + pts[k + 1] * s; };
+}
+function shape(x, att, rel) {
+  const a = Math.round(att * SR), r = Math.round(rel * SR), n = x.length;
+  for (let i = 0; i < n; i++) x[i] *= Math.min(1, i / Math.max(1, a), (n - i) / Math.max(1, r));
+  return x;
+}
+// a loopable texture: rendered a little long, then the tail is crossfaded into the head
+function texture(sec, fill, rms) {
+  const L = Math.round(SR * sec), F = Math.round(SR * 0.12), x = new Float32Array(L + F);
+  fill(x, (L + F) / SR);
+  const y = new Float32Array(L);
+  for (let i = 0; i < L; i++) y[i] = x[i];
+  for (let i = 0; i < F; i++) { const t = i / F; y[i] = x[i] * Math.sqrt(t) + x[L + i] * Math.sqrt(1 - t); }
+  return normRms(y, rms);
+}
+const stereo = fn => [fn(), fn()];
+function job(name, fn) { bankJobs.push([name, fn]); }
+function runJobs(budget) {
+  const t0 = performance.now();
+  while (bankJobs.length && performance.now() - t0 < budget) {
+    const [name, fn] = bankJobs.shift(), r = fn();
+    if (name) BANK[name] = r.map(v => (v instanceof Float32Array ? [v] : v));
+  }
+  if (bankJobs.length && budget !== Infinity) setTimeout(() => runJobs(12), 0);
+}
+
+// ----- the tick pools every texture is built from
+job(null, () => {
+  P.plastic = pool(48, () => tick(rand(0.2, 1.2), rand(2500, 9500), rand(1.5, 5), 1500));
+  P.soft = pool(24, () => tick(rand(0.6, 2), rand(1200, 3200), rand(1, 2)));
+  P.grain = pool(48, () => tick(rand(0.12, 0.5), rand(1800, 8000), rand(1, 3), 1200));
+  P.chunk = pool(24, () => tick(rand(0.8, 2.5), rand(700, 2600), rand(1, 2.5)));
+  P.dry = pool(48, () => tick(rand(0.15, 0.9), rand(2500, 10500), rand(0.8, 2.5), 2000));
+  P.gravel = pool(40, () => tick(rand(0.3, 1.2), rand(1100, 4500), rand(2, 6), 600));
+  P.ice = pool(40, () => tick(rand(0.08, 0.4), rand(3000, 9500), rand(3, 10), 2500));
+  P.bristle = pool(40, () => tick(rand(0.05, 0.25), rand(4000, 11000), rand(1, 3), 3000));
+  P.fire = pool(32, () => tick(rand(0.3, 1.6), rand(700, 4200), rand(1, 4), 300));
+  P.drip = pool(32, () => tick(rand(0.15, 0.6), rand(1500, 9000), rand(0.8, 3), 800));
+  P.bub = pool(40, () => norm(bubble(rand(700, 2600), rand(1.2, 1.9), rand(0.005, 0.02)), 1));
+  P.wet = pool(40, () => {
+    const x = bubble(rand(900, 2800), 1.5, rand(0.0015, 0.005));
+    add(x, burstNoise(0.25), 0, 0.35);
+    return norm(x, 1);
+  });
+  return [];
+});
+
+// ----- bubble wrap
+function popSample(size) {
+  const n = Math.round(SR * 0.2), x = new Float32Array(n), at = Math.round(SR * 0.002);
+  const burst = (pos, amp) => {
+    // the pressure pulse of the bubble tearing open: one push, one pull
+    const L = Math.round(SR * (0.0006 + size * 0.0016) * rand(0.8, 1.2));
+    for (let i = 0; i < 2 * L && pos + i < n; i++) x[pos + i] += amp * Math.sin((Math.PI * i) / L) * (i < L ? 1 : -0.7);
+    const c = burstNoise(rand(2, 5), 4); filt(c, 'hp', 900, 0.7); add(x, c, pos, amp * 0.9);
+    // and the air rushing out of it
+    const air = burstNoise(rand(20, 45), 5); filt(air, 'bp', rand(1800, 3800) * (1 - size * 0.35), 0.8); add(x, air, pos, amp * 0.55);
+  };
+  burst(at, 1);
+  if (Math.random() < 0.3) burst(at + Math.round(SR * rand(0.004, 0.012)), rand(0.35, 0.6));
+  ring(x, at, [0, 1, 2].map(() => [rand(1500, 5200) * (1 - size * 0.3), rand(0.012, 0.035), rand(0.08, 0.2)]), 1);
+  for (let k = 0, m = 1 + ((Math.random() * 3) | 0); k < m; k++) sprinkle(x, P.plastic, at + Math.round(SR * rand(0.025, 0.14)), rand(0.03, 0.1));
+  return norm(x, 0.9);
+}
+job('pop_s', () => pool(8, () => popSample(rand(0, 0.3))));
+job('pop_m', () => pool(8, () => popSample(rand(0.35, 0.65))));
+job('pop_l', () => pool(8, () => popSample(rand(0.7, 1))));
+job('squeak', () => pool(6, () => {
+  const n = Math.round(SR * 0.16), x = new Float32Array(n), f0 = rand(380, 520), f1 = f0 * rand(1.3, 1.6);
+  for (let t = 0.005; t < 0.13; ) { add(x, burstNoise(0.3), Math.round(t * SR), rand(0.6, 1)); t += (1 / (f0 + (f1 - f0) * (t / 0.13))) * rand(0.9, 1.1); }
+  const a = filt(Float32Array.from(x), 'bp', rand(1800, 2400), 4), b = filt(Float32Array.from(x), 'bp', rand(3200, 3900), 5);
+  for (let i = 0; i < n; i++) x[i] = a[i] + b[i] * 0.6;
+  return norm(shape(x, 0.01, 0.03), 0.8);
+}));
+job('popit', () => pool(10, () => {
+  const x = new Float32Array(Math.round(SR * 0.2));
+  ring(x, 0, [[rand(250, 340), 0.028, 1], [rand(520, 680), 0.016, 0.4], [rand(1100, 1450), 0.008, 0.18]], 1);
+  const puff = burstNoise(12, 5); filt(puff, 'lp', 2400, 0.7); add(x, puff, 0, 0.5);
+  sprinkle(x, P.soft, 0, 0.25);
+  return norm(x, 0.9);
+}));
+job('crinkle', () => [texture(4, (x, sec) => {
+  for (const t of events(sec, 18, 260, 22, 900)) {
+    const amp = Math.exp(rand(-3, 0));
+    let p = Math.round(t * SR);
+    for (let c = 0, m = 1 + ((Math.random() * 4) | 0); c < m; c++) { sprinkle(x, P.plastic, p, amp * rand(0.4, 1)); p += Math.round(SR * rand(0.0005, 0.004)); }
+  }
+}, 0.09)]);
+
+// ----- kinetic sand
+job('sandCut', () => [texture(3, (x, sec) => {
+  for (const t of events(sec, 2600, 900, 40, 7000)) sprinkle(x, P.grain, Math.round(t * SR), Math.exp(rand(-3.8, -1)));
+  for (const t of events(sec, 14, 60, 18, 120)) sprinkle(x, P.chunk, Math.round(t * SR), Math.exp(rand(-1.6, 0)) * 0.7);
+  const n = x.length, body = white(n), w = wobble(n, 18);
+  filt(body, 'lp', 700, 0.7); filt(body, 'hp', 120, 0.7);
+  for (let i = 0; i < n; i++) x[i] += body[i] * 0.35 * (0.3 + 0.7 * w(i));
+}, 0.1)]);
+job('sandThud', () => pool(6, () => {
+  const x = new Float32Array(Math.round(SR * 0.3)), b = burstNoise(25, 4);
+  filt(b, 'lp', 260, 0.8); add(x, b, 0, 4);
+  ring(x, 0, [[rand(70, 110), 0.05, 0.5]], 1);
+  for (let k = 0; k < 6; k++) sprinkle(x, P.chunk, Math.round(SR * rand(0.002, 0.05)), rand(0.1, 0.35));
+  return norm(x, 0.9);
+}));
+job('sandCrumble', () => pool(6, () => {
+  const sec = 1.1, n = Math.round(SR * sec), x = new Float32Array(n);
+  for (let t = 0; t < sec; ) { t += -Math.log(1 - Math.random()) / (3200 * Math.exp(-t / 0.22) + 40); sprinkle(x, P.grain, Math.round(t * SR), Math.exp(rand(-3, -0.6)) * Math.exp(-t / 0.4)); }
+  for (const t of events(0.4, 30, 80, 20, 200)) sprinkle(x, P.chunk, Math.round(t * SR), Math.exp(rand(-1.5, 0)) * 0.5);
+  const h = white(n); filt(h, 'bp', 2500, 0.6);
+  for (let i = 0; i < n; i++) x[i] += h[i] * 0.12 * Math.exp(-i / (SR * 0.2)) * Math.min(1, i / (SR * 0.01));
+  return norm(x, 0.85);
+}));
+job('sandSquish', () => pool(8, () => {
+  const n = Math.round(SR * 0.4), x = white(n);
+  filt(x, 'lp', 900, 0.8);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] *= 0.5 * Math.min(1, t / 0.03) * Math.exp(-Math.max(0, t - 0.03) / 0.09); }
+  for (let t = 0.005; t < 0.3; ) { t += -Math.log(1 - Math.random()) / (1800 * Math.exp(-t / 0.1) + 50); sprinkle(x, P.grain, Math.round(t * SR), Math.exp(rand(-3, -0.8))); }
+  return norm(x, 0.85);
+}));
+
+// ----- slime
+job('slimeCrackle', () => [texture(4, (x, sec) => {
+  for (const t of events(sec, 45, 180, 14, 700)) sprinkle(x, P.wet, Math.round(t * SR), Math.exp(rand(-3.2, 0)));
+}, 0.09)]);
+job('slimeSquelch', () => [texture(4, (x, sec) => {
+  const n = x.length, src = white(n), a = Float32Array.from(src), b = Float32Array.from(src), w1 = wobble(n, 3.5), w2 = wobble(n, 5), amp = wobble(n, 6);
+  filtTV(a, 'bp', i => 260 + 520 * w1(i), 2.5);
+  filtTV(b, 'bp', i => 850 + 1100 * w2(i), 3);
+  for (let i = 0; i < n; i++) x[i] = (a[i] + b[i] * 0.6) * amp(i) * amp(i);
+  for (const t of events(sec, 25, 100, 12, 400)) sprinkle(x, P.wet, Math.round(t * SR), Math.exp(rand(-2.5, -0.5)) * 0.3);
+}, 0.1)]);
+job('slimeSquish', () => pool(8, () => {
+  const n = Math.round(SR * 0.35), s = white(n), a = filtTV(Float32Array.from(s), 'bp', i => 950 * Math.exp(-i / (SR * 0.12)) + 240, 3), b = filtTV(Float32Array.from(s), 'bp', i => 1900 * Math.exp(-i / (SR * 0.1)) + 700, 4), x = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] = (a[i] + 0.5 * b[i]) * Math.min(1, t / 0.02) * Math.exp(-Math.max(0, t - 0.02) / 0.1); }
+  norm(x, 0.7);
+  for (const t of events(0.25, 60, 200, 20, 800)) sprinkle(x, P.wet, Math.round(t * SR), Math.exp(rand(-2, 0)) * 0.45);
+  return norm(x, 0.85);
+}));
+job('slimePop', () => pool(10, () => {
+  const x = new Float32Array(Math.round(SR * 0.12));
+  add(x, bubble(rand(650, 1500), 1.45, rand(0.012, 0.025)), 0, 1);
+  add(x, burstNoise(0.6), 0, 0.5);
+  for (let k = 0; k < 3; k++) sprinkle(x, P.wet, Math.round(SR * rand(0.004, 0.05)), rand(0.1, 0.3));
+  return norm(x, 0.9);
+}));
+job('slimeTick', () => pool(16, () => {
+  const x = new Float32Array(Math.round(SR * 0.03));
+  sprinkle(x, P.wet, 0, 1);
+  if (Math.random() < 0.5) sprinkle(x, P.wet, Math.round(SR * rand(0.003, 0.012)), rand(0.3, 0.7));
+  return norm(x, 0.9);
+}));
+job('slimeSuction', () => pool(6, () => {
+  const n = Math.round(SR * 0.22), x = white(n);
+  filtTV(x, 'bp', i => 230 + 1000 * Math.min(1, i / (SR * 0.07)), 3.5);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] *= Math.min(1, t / 0.01) * Math.exp(-Math.max(0, t - 0.05) / 0.04); }
+  norm(x, 0.7);
+  sprinkle(x, P.wet, Math.round(SR * rand(0.05, 0.08)), 0.5);
+  return norm(x, 0.85);
+}));
+
+// ----- floral foam
+function foamCrunch(sec, peakT, density, body, pok) {
+  const n = Math.round(SR * sec), x = new Float32Array(n);
+  for (let t = 0; t < sec; ) {
+    t += -Math.log(1 - Math.random()) / (density * (t < peakT ? t / peakT : Math.exp(-(t - peakT) / (sec * 0.3))) + 20);
+    sprinkle(x, P.dry, Math.round(t * SR), Math.exp(rand(-2.8, 0)));
+  }
+  const b = white(n); filt(b, 'lp', 800, 0.7);
+  for (let i = 0; i < n; i++) x[i] += b[i] * body * Math.min(1, i / (SR * 0.004)) * Math.exp(-i / (SR * 0.07));
+  if (pok) ring(x, 0, [[rand(220, 380), 0.03, pok]], 1);
+  return norm(x, 0.9);
+}
+job('foamBig', () => pool(10, () => foamCrunch(0.35, 0.015, 2600, 3, 0.6)));
+job('foamSmall', () => pool(10, () => foamCrunch(0.15, 0.008, 1800, 2, 0.25)));
+job('foamDull', () => pool(6, () => foamCrunch(0.2, 0.01, 250, 5, 0.9)));
+
+// ----- tapping: a fingernail click, a finger-pad thump, then the object rings
+const TAPM = {
+  wood: { modes: [[640, 0.012, 1], [1480, 0.008, 0.5], [2900, 0.006, 0.3], [4300, 0.004, 0.15]], nail: 0.5, pad: 0.5 },
+  glass: { modes: [[1260, 0.4, 0.5, 1.3], [2950, 0.28, 0.35, 0.9], [5300, 0.16, 0.2], [7700, 0.1, 0.1]], nail: 0.8, pad: 0.1 },
+  ceramic: { modes: [[990, 0.09, 0.6], [2520, 0.06, 0.35, 0.7], [4750, 0.035, 0.2], [6900, 0.02, 0.1]], nail: 0.6, pad: 0.2 },
+  tin: { modes: [[430, 0.14, 0.5, 0.8], [690, 0.12, 0.45], [935, 0.11, 0.4, 1.1], [1215, 0.09, 0.35], [1690, 0.08, 0.3], [2410, 0.06, 0.25], [3330, 0.05, 0.2]], nail: 0.6, pad: 0.25 },
+  mat: { modes: [[310, 0.01, 0.6], [880, 0.006, 0.3]], nail: 0.35, pad: 0.7 },
+  sponge: { modes: [], nail: 0.12, pad: 0.6, soft: true },
+  comb: { modes: [[2600, 0.02, 0.5], [5200, 0.008, 0.2]], nail: 0.6, pad: 0.1 }
+};
+function tapSample(m) {
+  const M = TAPM[m], long = M.modes.reduce((a, q) => Math.max(a, q[1]), 0.02);
+  const x = new Float32Array(Math.round(SR * Math.min(1, 0.05 + long * 6)));
+  add(x, tick(rand(0.2, 0.5), rand(4200, 7000), 1.2, 2500), 0, M.nail);
+  const pad = burstNoise(rand(4, 8), 3); filt(pad, 'lp', 420, 0.8); add(x, pad, 0, M.pad * 4);
+  ring(x, 0, M.modes.map(([f, d, g, b]) => [f * rand(0.97, 1.03), d * rand(0.85, 1.15), g * rand(0.7, 1.2), b]), 0.5);
+  if (M.soft) {
+    const s = burstNoise(40, 3); filt(s, 'bp', 1300, 0.7); add(x, s, 0, 2);
+    for (let k = 0; k < 8; k++) sprinkle(x, P.soft, Math.round(SR * rand(0, 0.03)), rand(0.05, 0.2));
+  }
+  return norm(x, 0.9);
+}
+for (const m of Object.keys(TAPM)) job('tap_' + m, () => pool(6, () => tapSample(m)));
+function scratchTex(m) {
+  const M = TAPM[m];
+  return texture(2.5, (x, sec) => {
+    const n = x.length;
+    if (m === 'sponge') {
+      for (const t of events(sec, 1400, 600, 30, 4000)) sprinkle(x, P.soft, Math.round(t * SR), Math.exp(rand(-3, -0.5)));
+      const b = white(n); filt(b, 'bp', 1500, 0.6);
+      for (let i = 0; i < n; i++) x[i] += b[i] * 0.4;
+      return;
+    }
+    // a fingernail sticks and slips: a jittery train of tiny impacts, each briefly ringing the object
+    const grain = new Float32Array(Math.round(SR * 0.03));
+    add(grain, tick(0.15, 5000, 1, 2000), 0, 0.6);
+    ring(grain, 0, M.modes.map(([f, d, g]) => [f, Math.min(d, 0.01), g]), 0.6);
+    for (let t = 0, rate = rand(220, 320); t < sec; ) {
+      t += (1 / rate) * rand(0.6, 1.4);
+      rate = clamp(rate + rand(-30, 30), 150, 450);
+      add(x, grain, Math.round(t * SR), Math.exp(rand(-1.5, 0)) * (Math.random() < 0.5 ? 1 : -1));
+    }
+    const f = white(n); filt(f, 'bp', m === 'glass' ? 5000 : m === 'tin' ? 3800 : 2600, 0.8);
+    for (let i = 0; i < n; i++) x[i] += f[i] * 0.4;
+  }, 0.09);
+}
+for (const m of ['wood', 'glass', 'ceramic', 'tin', 'sponge', 'mat']) job('scr_' + m, () => [scratchTex(m)]);
+job('pluck', () => pool(6, () => {
+  const x = new Float32Array(Math.round(SR * 0.12));
+  add(x, tick(0.15, 6000, 1, 2500), 0, 0.5);
+  ring(x, 0, [[2400 * rand(0.99, 1.01), 0.03, 1], [2400 * 2.76, 0.01, 0.25], [2400 * 5.4, 0.005, 0.1]], 0.6);
+  return norm(x, 0.8);
+}));
+
+// ----- keyboard switches
+function keySample(sw, big, up) {
+  const x = new Float32Array(Math.round(SR * (big ? 0.2 : 0.14))), low = big ? 0.72 : 1;
+  const impact = (pos, lp, amp) => { const b = burstNoise(rand(2, 4), 4); filt(b, 'lp', lp, 0.7); add(x, b, pos, amp); };
+  if (up) {
+    add(x, tick(rand(0.5, 1), rand(1800, 3000), 1.5), 0, 0.35);
+    ring(x, 0, [[rand(800, 1100) * low, 0.01, 0.3], [rand(1900, 2600), 0.006, 0.2]], 1);
+    if (sw === 'click') add(x, tick(0.2, 5500, 3, 3000), 0, 0.5);
+    return norm(x, 0.55);
+  }
+  if (sw === 'thock') {
+    impact(0, 2500, 0.8);
+    ring(x, 0, [[rand(190, 240) * low, 0.03, 1], [rand(420, 520) * low, 0.02, 0.6], [rand(1050, 1300), 0.01, 0.3], [rand(2200, 2700), 0.006, 0.15]], 0.8);
+    add(x, tick(rand(0.4, 0.8), rand(3500, 4500), 1.5), 0, 0.2);
+  } else if (sw === 'clack') {
+    add(x, tick(0.5, 1800, 2), 0, 0.3);   // the tactile bump
+    const p = Math.round(SR * 0.006);
+    impact(p, 6000, 0.9);
+    ring(x, p, [[rand(480, 560) * low, 0.015, 0.6], [rand(1050, 1200), 0.012, 0.5], [rand(2500, 2900), 0.008, 0.4], [rand(4200, 4700), 0.005, 0.25]], 0.8);
+  } else {
+    add(x, tick(0.2, 5500, 3, 3000), 0, 1);   // click jacket
+    add(x, tick(0.2, 4800, 3, 3000), Math.round(SR * 0.009), 0.7);
+    ring(x, 0, [[rand(2900, 3400), 0.06, 0.05]], 1);   // spring ping
+    const p = Math.round(SR * 0.012);
+    impact(p, 3500, 0.6);
+    ring(x, p, [[rand(300, 340) * low, 0.02, 0.6], [rand(900, 1100), 0.01, 0.35], [rand(2300, 2600), 0.006, 0.25]], 0.8);
+  }
+  if (big) for (let k = 0; k < 3; k++) add(x, tick(rand(0.2, 0.5), rand(2600, 3600), 4), Math.round(SR * rand(0.015, 0.045)), rand(0.1, 0.25));   // stabiliser rattle
+  return norm(x, 0.9);
+}
+for (const sw of ['thock', 'clack', 'click']) {
+  job('k_' + sw, () => pool(10, () => keySample(sw, false, false)));
+  job('kb_' + sw, () => pool(4, () => keySample(sw, true, false)));
+  job('ku_' + sw, () => pool(6, () => keySample(sw, false, true)));
+}
+
+// ----- water
+function dropSample(big) {
+  const x = new Float32Array(Math.round(SR * (big ? 0.32 : 0.2))), s = Math.round(SR * rand(0.002, 0.008));
+  add(x, tick(0.3, 3000, 1, 900), 0, 0.3);
+  if (big) {
+    add(x, bubble(rand(420, 650), rand(1.4, 2), rand(0.03, 0.055)), s, 1);
+    if (Math.random() < 0.7) add(x, bubble(rand(900, 1400), rand(1.3, 1.8), rand(0.01, 0.02)), s + Math.round(SR * rand(0.03, 0.08)), 0.35);
+  } else add(x, bubble(rand(800, 1500), rand(1.4, 2.2), rand(0.012, 0.028)), s, 1);
+  const sp = burstNoise(rand(15, 30), 4); filt(sp, 'bp', rand(3000, 6000), 0.8); add(x, sp, 0, big ? 0.5 : 0.25);
+  return norm(x, 0.9);
+}
+job('dropS', () => pool(14, () => dropSample(false)));
+job('dropL', () => pool(8, () => dropSample(true)));
+job('brook', () => [stereo(() => texture(6, (x, sec) => {
+  for (const t of events(sec, 70, 60, 10, 300)) sprinkle(x, P.bub, Math.round(t * SR), Math.exp(rand(-3, -0.8)));
+  const n = x.length, g = white(n), h = white(n), w = wobble(n, 4);
+  filt(g, 'lp', 380, 0.9); filt(h, 'bp', 3500, 0.5);
+  for (let i = 0; i < n; i++) x[i] += g[i] * 2 * w(i) + h[i] * 0.1;
+}, 0.08))]);
+job('swish', () => [texture(3, (x, sec) => {
+  const n = x.length, s = white(n), w = wobble(n, 7), fw = wobble(n, 3);
+  filtTV(s, 'bp', i => 400 + 900 * fw(i), 1.5);
+  for (let i = 0; i < n; i++) x[i] = s[i] * (0.4 + 0.6 * w(i));
+  for (const t of events(sec, 25, 60, 12, 200)) sprinkle(x, P.bub, Math.round(t * SR), Math.exp(rand(-2.5, -0.5)) * 0.3);
+}, 0.1)]);
+
+// ----- zen garden
+job('gravel', () => [texture(3, (x, sec) => {
+  for (const t of events(sec, 1200, 800, 30, 4000)) sprinkle(x, P.gravel, Math.round(t * SR), Math.exp(rand(-3.2, -0.3)));
+  const n = x.length, s = white(n), w = wobble(n, 9);
+  filt(s, 'bp', 2800, 0.6);
+  for (let i = 0; i < n; i++) x[i] += s[i] * 0.3 * w(i);
+}, 0.1)]);
+job('stone', () => pool(6, () => {
+  const x = new Float32Array(Math.round(SR * 0.2));
+  add(x, tick(0.3, 4000, 1.5, 1500), 0, 0.6);
+  ring(x, 0, [[rand(650, 800), 0.03, 0.6], [rand(1800, 2100), 0.02, 0.4], [rand(3600, 4200), 0.012, 0.25]], 0.7);
+  return norm(x, 0.9);
+}));
+job('shishi', () => pool(2, () => {
+  const x = new Float32Array(Math.round(SR * 2.6)), knock = Math.round(SR * 1.1);
+  // water trickles into the bamboo until it tips and knocks against the stone
+  for (let t = 0.05; t < 1.1; ) { t += -Math.log(1 - Math.random()) / (20 + 40 * t); sprinkle(x, P.bub, Math.round(t * SR), 0.12 + 0.2 * t); }
+  add(x, tick(0.8, 2000, 1.2), knock, 0.6);
+  ring(x, knock, [[rand(450, 480), 0.12, 1], [rand(1050, 1120), 0.07, 0.4], [rand(1850, 1950), 0.05, 0.2]], 0.8);
+  ring(x, knock + Math.round(SR * 0.23), [[465, 0.1, 0.25], [1080, 0.05, 0.1]], 0.8);
+  const sp = white(Math.round(SR * 0.4)); filt(sp, 'lp', 1800, 0.7);
+  for (let i = 0; i < sp.length; i++) sp[i] *= Math.exp(-i / (SR * 0.1));
+  add(x, sp, Math.round(SR * 1.2), 0.5);
+  return norm(x, 0.85);
+}));
+
+// ----- ice
+job('iceCrack', () => pool(16, () => {
+  const x = new Float32Array(Math.round(SR * 0.04)), n = 3 + ((Math.random() * 10) | 0);
+  for (let k = 0; k < n; k++) sprinkle(x, P.ice, Math.round(SR * rand(0, 0.025) * (k / n)), Math.exp(rand(-1.5, 0)) * (1 - (k / n) * 0.6));
+  return norm(x, 0.9);
+}));
+job('iceThunk', () => pool(6, () => {
+  const x = new Float32Array(Math.round(SR * 0.45)), b = burstNoise(8, 4);
+  filt(b, 'lp', 500, 0.7); add(x, b, 0, 3);
+  ring(x, 0, [[rand(90, 150), 0.09, 1], [rand(230, 320), 0.05, 0.4]], 0.7);
+  for (let k = 0; k < 8; k++) sprinkle(x, P.ice, Math.round(SR * rand(0, 0.02)), rand(0.1, 0.4));
+  return norm(x, 0.9);
+}));
+job('shatter', () => pool(2, () => stereo(() => {
+  const n = Math.round(SR * 1.6), x = new Float32Array(n), c = white(Math.round(SR * 0.6));
+  filt(c, 'hp', 1500, 0.6);
+  for (let i = 0; i < c.length; i++) c[i] *= Math.exp(-i / (SR * 0.12));
+  add(x, c, 0, 0.5);
+  for (let t = 0; t < 1.3; ) {
+    t += -Math.log(1 - Math.random()) / (70 * Math.exp(-t / 0.35) + 5);
+    const p = Math.round(t * SR), f = rand(2200, 7500);
+    ring(x, p, [[f, rand(0.02, 0.08), 1, rand(0.5, 3)], [f * rand(2.1, 2.5), 0.015, 0.3]], Math.exp(rand(-2.5, -0.3)) * 0.4);
+    add(x, tick(0.1, 6000, 2, 2000), p, 0.2);
+  }
+  ring(x, 0, [[70, 0.12, 0.6]], 1);
+  return norm(x, 0.85);
+})));
+job('skate', () => [texture(3, (x, sec) => {
+  const n = x.length, s = white(n), w = wobble(n, 12);
+  filt(s, 'hp', 3500, 0.7); filt(s, 'bp', 6500, 0.8);
+  for (let i = 0; i < n; i++) x[i] = s[i] * (0.4 + 0.6 * w(i));
+  for (const t of events(sec, 220, 300, 25, 1500)) sprinkle(x, P.ice, Math.round(t * SR), Math.exp(rand(-3, -0.8)) * 0.4);
+}, 0.09)]);
+
+// ----- weather
+job('rain', () => [stereo(() => texture(6, (x, sec) => {
+  for (const t of events(sec, 700, 200, 10, 1400)) sprinkle(x, P.drip, Math.round(t * SR), Math.exp(rand(-4.2, -0.6)));
+  for (let t = 0; t < sec; ) { t += -Math.log(1 - Math.random()) / 9; ring(x, Math.round(t * SR), [[rand(1400, 4200), rand(0.008, 0.025), 1]], Math.exp(rand(-3, -1))); }
+  const n = x.length, s = white(n), w = wobble(n, 0.7);
+  filt(s, 'bp', 1800, 0.4);
+  for (let i = 0; i < n; i++) x[i] += s[i] * 0.1 * (0.6 + 0.4 * w(i));
+}, 0.1))]);
+job('fire', () => [stereo(() => texture(6, (x, sec) => {
+  for (const t of events(sec, 10, 90, 8, 300)) sprinkle(x, P.fire, Math.round(t * SR), Math.exp(rand(-3, 0)) * 0.7);
+  for (let t = rand(0, 1.5); t < sec; t += rand(0.8, 2.6)) {
+    const p = Math.round(t * SR), k = 5 + ((Math.random() * 15) | 0);
+    for (let j = 0; j < k; j++) sprinkle(x, P.fire, p + Math.round((SR * rand(0, 0.06) * j) / k), rand(0.3, 1));
+    ring(x, p, [[rand(90, 160), 0.03, 0.5]], 0.5);
+  }
+  const n = x.length, r = white(n), h = white(n), w = wobble(n, 0.5), wh = wobble(n, 3);
+  filt(r, 'lp', 170, 0.7); filt(h, 'hp', 2500, 0.7);
+  for (let i = 0; i < n; i++) x[i] += r[i] * 3 * (0.5 + 0.5 * w(i)) + h[i] * 0.05 * wh(i);
+}, 0.1))]);
+
+// ----- the ear microphone
+job('brush', () => [texture(3, (x, sec) => {
+  for (const t of events(sec, 2400, 600, 30, 6000)) sprinkle(x, P.bristle, Math.round(t * SR), Math.exp(rand(-4, -1.2)));
+  const n = x.length, s = white(n), l = white(n), w = wobble(n, 5), fw = wobble(n, 2);
+  filtTV(s, 'bp', i => 3500 + 3500 * fw(i), 0.7);
+  filt(l, 'lp', 260, 0.7);
+  for (let i = 0; i < n; i++) x[i] += s[i] * 0.35 * (0.5 + 0.5 * w(i)) + l[i] * 1.2 * w(i);
+}, 0.1)]);
+job('rub', () => [texture(3, (x, sec) => {
+  const n = x.length, s = white(n), w = wobble(n, 6), sq = new Float32Array(n);
+  filt(s, 'bp', 900, 0.9);
+  for (let i = 0; i < n; i++) x[i] = s[i] * (0.4 + 0.6 * w(i));
+  // skin catching on silicone: short squeaky stick-slip bursts
+  for (let t = 0.1; t < sec; t += rand(0.25, 0.7)) {
+    const f = rand(280, 520), len = rand(0.03, 0.08);
+    for (let u = 0; u < len; u += 1 / f) add(sq, burstNoise(0.3), Math.round((t + u) * SR), Math.sin((Math.PI * u) / len));
+  }
+  filt(sq, 'bp', rand(1600, 2200), 3);
+  for (let i = 0; i < n; i++) x[i] += sq[i] * 0.5;
+  for (const t of events(sec, 60, 80, 12, 300)) sprinkle(x, P.soft, Math.round(t * SR), Math.exp(rand(-3, -1)) * 0.3);
+}, 0.1)]);
+job('fluff', () => [texture(3, (x, sec) => {
+  for (const t of events(sec, 2800, 900, 25, 7000)) sprinkle(x, P.bristle, Math.round(t * SR), Math.exp(rand(-3.2, -0.8)));
+  for (const t of events(sec, 80, 150, 15, 600)) sprinkle(x, P.soft, Math.round(t * SR), Math.exp(rand(-2.2, 0)) * 0.6);
+  const n = x.length, l = white(n), m = white(n), w = wobble(n, 8);
+  filt(l, 'lp', 220, 0.8); filt(m, 'bp', 1400, 0.6);
+  for (let i = 0; i < n; i++) x[i] += l[i] * 3 * w(i) + m[i] * 0.3 * w(i);
+}, 0.11)]);
+job('earTap', () => pool(8, () => {
+  const x = new Float32Array(Math.round(SR * 0.25)), b = burstNoise(rand(5, 10), 3);
+  filt(b, 'lp', 300, 0.8); add(x, b, 0, 6);
+  ring(x, 0, [[rand(90, 140), 0.04, 1], [rand(250, 350), 0.02, 0.4]], 0.6);
+  add(x, tick(0.4, 2500, 1, 600), 0, 0.12);
+  return norm(x, 0.9);
+}));
+job('brushPat', () => pool(6, () => {
+  const n = Math.round(SR * 0.12), x = white(n);
+  filt(x, 'bp', 5000, 0.5);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] *= Math.min(1, t / 0.01) * Math.exp(-t / 0.03); }
+  norm(x, 0.6);
+  for (let k = 0; k < 40; k++) sprinkle(x, P.bristle, Math.round(SR * rand(0, 0.06)), rand(0.05, 0.25));
+  return norm(x, 0.8);
+}));
+job('fluffPat', () => pool(6, () => {
+  const n = Math.round(SR * 0.2), x = white(n);
+  filt(x, 'lp', 400, 0.8);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] *= Math.min(1, t / 0.008) * Math.exp(-t / 0.05); }
+  norm(x, 0.8);
+  for (let k = 0; k < 60; k++) sprinkle(x, P.bristle, Math.round(SR * rand(0, 0.08)), rand(0.05, 0.3));
+  return norm(x, 0.9);
+}));
+
+// ----- whispers: breath shaped by the mouth into vowels and hushed consonants, in no language at all
+const VOWELS = { a: [780, 1250, 2600], e: [480, 1850, 2600], i: [320, 2250, 3000], o: [520, 900, 2500], u: [360, 780, 2400], y: [560, 1500, 2500] };
+function whisperPhrase() {
+  const segs = [], cons = ['s', 'sh', 'f', 'h', 't', 'k', 'p', 's', 't', 'sh', 'h'], vk = Object.keys(VOWELS);
+  let t = rand(0.04, 0.12);
+  for (let w = 0, words = 2 + ((Math.random() * 4) | 0); w < words; w++) {
+    for (let s = 0, syl = 1 + ((Math.random() * 3) | 0); s < syl; s++) {
+      if (Math.random() < 0.75) {
+        const c = pick(cons), d = c === 's' || c === 'sh' ? rand(0.07, 0.13) : c === 'f' || c === 'h' ? rand(0.05, 0.09) : rand(0.045, 0.065);
+        segs.push({ k: c, t, d }); t += d;
+      }
+      const d = rand(0.08, 0.16);
+      segs.push({ k: 'v', v: VOWELS[pick(vk)], t, d, a: rand(0.7, 1) }); t += d;
+      if (Math.random() < 0.22) { const c = pick(['s', 't', 'k', 'sh']), d2 = rand(0.05, 0.09); segs.push({ k: c, t, d: d2 }); t += d2; }
+    }
+    t += rand(0.06, 0.16);
+  }
+  const n = Math.round((t + 0.12) * SR), B = 64, nb = Math.ceil(n / B);
+  const aV = new Float32Array(nb), aS = new Float32Array(nb), aSh = new Float32Array(nb), aF = new Float32Array(nb), F = [new Float32Array(nb), new Float32Array(nb), new Float32Array(nb)];
+  let lastV = VOWELS.y;
+  segs.forEach((sg, si) => {
+    const b0 = Math.floor((sg.t * SR) / B), b1 = Math.min(nb, Math.ceil(((sg.t + sg.d) * SR) / B));
+    const next = segs.slice(si + 1).find(q => q.k === 'v'), fv = sg.k === 'v' ? sg.v : next ? next.v : lastV;
+    for (let b = b0; b < b1; b++) {
+      F[0][b] = fv[0]; F[1][b] = fv[1]; F[2][b] = fv[2];
+      if (sg.k === 'v') aV[b] = sg.a; else if (sg.k === 'h') aV[b] = 0.4; else if (sg.k === 's') aS[b] = 1; else if (sg.k === 'sh') aSh[b] = 1; else if (sg.k === 'f') aF[b] = 1;
+    }
+    if (sg.k === 'v') lastV = sg.v;
+  });
+  for (const f of F) { let prev = f.find(v => v > 0) || 500; for (let b = 0; b < nb; b++) { if (f[b] > 0) prev = f[b]; else f[b] = prev; } }
+  const smooth = (arr, tau) => { const k = 1 - Math.exp(-B / (SR * tau)); let v = arr[0]; for (let b = 0; b < nb; b++) { v += (arr[b] - v) * k; arr[b] = v; } };
+  smooth(aV, 0.018); smooth(aS, 0.012); smooth(aSh, 0.012); smooth(aF, 0.012);
+  for (const f of F) smooth(f, 0.025);
+  const src = white(n), out = new Float32Array(n), fixed = f => new Float32Array(nb).fill(f);
+  const band = (fArr, q, gains, g) => {
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let b = 0; b < nb; b++) {
+      const [b0, b1, b2, a1, a2] = coef('bp', fArr[b], q), e = Math.min(n, (b + 1) * B), a = gains[b] * g;
+      for (let i = b * B; i < e; i++) { const v = src[i], y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = v; y2 = y1; y1 = y; out[i] += y * a; }
+    }
+  };
+  band(F[0], 3, aV, 1); band(F[1], 6, aV, 0.8); band(F[2], 8, aV, 0.45);   // the vowel formants
+  band(fixed(1500), 0.5, aV, 0.12);                                          // breath under them
+  band(fixed(7200), 1.4, aS, 0.45);                                          // s
+  band(fixed(2600), 1.6, aSh, 0.55); band(fixed(4100), 2, aSh, 0.3);         // sh
+  band(fixed(3400), 0.6, aF, 0.2);                                           // f
+  for (const sg of segs) {
+    if (sg.k !== 't' && sg.k !== 'k' && sg.k !== 'p') continue;
+    const bn = burstNoise(sg.k === 't' ? 7 : 10, 4);
+    filt(bn, sg.k === 't' ? 'hp' : sg.k === 'k' ? 'bp' : 'lp', sg.k === 't' ? 3500 : sg.k === 'k' ? 2000 : 1400, sg.k === 'k' ? 2 : 0.7);
+    add(out, bn, Math.round((sg.t + sg.d * 0.55) * SR), sg.k === 'p' ? 0.06 : 0.1);
+  }
+  filt(out, 'lp', 7500, 0.6);
+  for (let i = 0; i < n; i++) out[i] *= 1 - 0.35 * (i / n);
+  return norm(out, 0.8);
+}
+job('whisper', () => pool(8, whisperPhrase));
+job('shh', () => pool(3, () => {
+  const sec = rand(1.2, 1.8), n = Math.round(SR * sec), x = white(n), a = Float32Array.from(x);
+  filt(x, 'bp', 2600, 1.6); filt(a, 'bp', 4200, 2);
+  for (let i = 0; i < n; i++) x[i] = (x[i] + a[i] * 0.5) * Math.pow(Math.sin((Math.PI * i) / n), 1.5);
+  return norm(x, 0.8);
+}));
+job('tk', () => pool(4, () => {
+  const x = new Float32Array(Math.round(SR * 0.7));
+  for (let j = 0, k = 2 + ((Math.random() * 3) | 0); j < k; j++) {
+    const c = bubble(rand(1300, 2100), 0.75, rand(0.004, 0.008)), lo = burstNoise(4, 3);
+    filt(lo, 'lp', 400, 0.7); add(c, lo, 0, 3); add(c, burstNoise(0.4), 0, 0.5);
+    add(x, norm(c, 1), Math.round(SR * (0.02 + j * rand(0.13, 0.19))), rand(0.7, 1));
+  }
+  return norm(x, 0.8);
+}));
+setTimeout(() => runJobs(12), 60);
+
+// ----- playback
 const Sound = {
-  ac: null, muted: false, rain: false, fire: false, bin: true, zones: [],
+  ac: null, muted: false, rain: false, fire: false, whispers: false, bin: true, zones: [], loops: [], cache: new Map(), wT: 1, wSide: 1,
 
   start() {
     if (this.ac) { if (this.ac.state === 'suspended') this.ac.resume().catch(() => {}); return; }
@@ -247,18 +872,26 @@ const Sound = {
     let ac;
     try { ac = new AC(); } catch (e) { return; }
     this.ac = ac;
+    runJobs(Infinity);
 
     this.master = ac.createGain();
     this.master.gain.value = this.muted ? 0 : 1;
     const comp = ac.createDynamicsCompressor();
-    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 3;
+    comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3;
     comp.attack.value = 0.003; comp.release.value = 0.25;
     this.master.connect(comp); comp.connect(ac.destination);
     this.an = ac.createAnalyser(); this.an.fftSize = 256; this.an.smoothingTimeConstant = 0.6;
     this.fbuf = new Uint8Array(this.an.frequencyBinCount);
     comp.connect(this.an);
 
-    this.out = ac.createGain(); this.out.gain.value = 0.9; this.out.connect(this.master);
+    // a close microphone: a little extra warmth from proximity, a little extra air on top
+    this.out = ac.createGain(); this.out.gain.value = 0.9;
+    const warm = ac.createBiquadFilter(); warm.type = 'lowshelf'; warm.frequency.value = 160; warm.gain.value = 3;
+    const air = ac.createBiquadFilter(); air.type = 'highshelf'; air.frequency.value = 9500; air.gain.value = 2.5;
+    this.out.connect(warm); warm.connect(air); air.connect(this.master);
+    const verb = ac.createConvolver(); verb.buffer = this.impulse(0.45, 4);
+    const send = ac.createGain(); send.gain.value = 0.05;
+    this.out.connect(send); send.connect(verb); verb.connect(this.master);
     // binaural: seven HRTF positions on an arc just in front of your face
     if (ac.createPanner) {
       for (let i = 0; i < 7; i++) {
@@ -270,79 +903,44 @@ const Sound = {
         this.zones.push(p);
       }
     }
-    // a small, close room so the sounds feel near the ear
-    const verb = ac.createConvolver(); verb.buffer = this.impulse(0.9, 3.5);
-    const send = ac.createGain(); send.gain.value = 0.12;
-    this.out.connect(send); send.connect(verb); verb.connect(this.master);
+    // the faint hiss of a preamp, the way every close-mic recording has it
+    const hiss = ac.createBufferSource(); hiss.buffer = this.noiseBuffer(2); hiss.loop = true;
+    const hf = ac.createBiquadFilter(); hf.type = 'highpass'; hf.frequency.value = 1500;
+    const hg = ac.createGain(); hg.gain.value = 0.0012;
+    hiss.connect(hf); hf.connect(hg); hg.connect(this.master); hiss.start();
 
-    this.buf = { white: this.noise('white', 2), pink: this.noise('pink', 3), brown: this.noise('brown', 3) };
-
-    const loop = (type, ftype, f, q) => {
-      const s = ac.createBufferSource(); s.buffer = this.buf[type]; s.loop = true;
-      const fl = ac.createBiquadFilter(); fl.type = ftype; fl.frequency.value = f; fl.Q.value = q;
-      const g = ac.createGain(); g.gain.value = 0;
-      s.connect(fl); fl.connect(g);
-      let p = null;
-      if (ac.createStereoPanner) { p = ac.createStereoPanner(); g.connect(p); p.connect(this.out); } else g.connect(this.out);
-      s.start(0, rand(0, s.buffer.duration));
-      return { f: fl, g, p };
-    };
-    this.sandL = loop('pink', 'bandpass', 1700, 0.7);
-    this.slimeA = loop('brown', 'lowpass', 420, 6);
-    this.slimeB = loop('pink', 'bandpass', 1150, 2.2);
-    this.scratchL = loop('pink', 'bandpass', 2500, 1.5);
-    this.waterL = loop('pink', 'bandpass', 900, 0.8);
-    this.brookL = loop('pink', 'bandpass', 3200, 0.6);
-    this.rakeL = loop('pink', 'bandpass', 3200, 0.7);
-    this.rakeLo = loop('brown', 'lowpass', 350, 0.7);
-    this.iceL = loop('pink', 'bandpass', 5200, 1.5);
-
-    // rain bed
-    const rs = ac.createBufferSource(); rs.buffer = this.buf.pink; rs.loop = true;
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.3;
-    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 320; hp.Q.value = 0.3;
-    this.rainG = ac.createGain(); this.rainG.gain.value = 0;
-    rs.connect(lp); lp.connect(hp); hp.connect(this.rainG); this.rainG.connect(this.master);
-    rs.start(0, rand(0, rs.buffer.duration));
-    this.setRain(this.rain);
-
-    // fireplace bed: a low rumble and a soft hiss; the crackles come from tick()
-    this.fireG = ac.createGain(); this.fireG.gain.value = 0; this.fireG.connect(this.master);
-    const bed = (type, ftype, f, q, g) => {
-      const s = ac.createBufferSource(); s.buffer = this.buf[type]; s.loop = true;
-      const fl = ac.createBiquadFilter(); fl.type = ftype; fl.frequency.value = f; fl.Q.value = q;
-      const gn = ac.createGain(); gn.gain.value = g;
-      s.connect(fl); fl.connect(gn); gn.connect(this.fireG);
-      s.start(0, rand(0, s.buffer.duration));
-    };
-    bed('brown', 'lowpass', 520, 0.5, 0.5);
-    bed('pink', 'bandpass', 1400, 0.6, 0.06);
-    this.setFire(this.fire);
+    this.crinkleL = this.loop('crinkle');
+    this.sandL = this.loop('sandCut', 'lowpass', 5000);
+    this.slimeA = this.loop('slimeSquelch');
+    this.slimeB = this.loop('slimeCrackle');
+    this.scr = {};
+    for (const m of ['wood', 'glass', 'ceramic', 'tin', 'sponge', 'mat']) this.scr[m] = this.loop('scr_' + m);
+    this.waterL = this.loop('swish', 'lowpass', 2000);
+    this.brookL = this.loop('brook', null, 0, true);
+    this.rakeL = this.loop('gravel', 'lowpass', 6000);
+    this.iceL = this.loop('skate');
+    this.brushL = this.loop('brush');
+    this.rubL = this.loop('rub');
+    this.fluffL = this.loop('fluff');
+    this.rainL = this.loop('rain', null, 0, true);
+    this.fireL = this.loop('fire', null, 0, true);
+    this.setRain(this.rain); this.setFire(this.fire);
+    // move every rendered sound into audio buffers now, and let go of the raw arrays
+    for (const name in BANK) { BANK[name].forEach((_, i) => this.buffer(name, i)); BANK[name] = BANK[name].map(() => 0); }
     if (ac.state === 'suspended') ac.resume().catch(() => {});
   },
 
   on() { return !!this.ac && !this.muted; },
   setMuted(m) { this.muted = m; if (this.ac) this.master.gain.setTargetAtTime(m ? 0 : 1, this.ac.currentTime, 0.05); },
-  setRain(r) { this.rain = r; if (this.ac) this.rainG.gain.setTargetAtTime(r ? 0.22 : 0, this.ac.currentTime, 0.6); },
-  setFire(f) { this.fire = f; if (this.ac) this.fireG.gain.setTargetAtTime(f ? 0.5 : 0, this.ac.currentTime, 0.6); },
+  setRain(r) { this.rain = r; if (this.ac) this.rainL.g.gain.setTargetAtTime(r ? 0.6 : 0, this.ac.currentTime, 0.6); },
+  setFire(f) { this.fire = f; if (this.ac) this.fireL.g.gain.setTargetAtTime(f ? 0.7 : 0, this.ac.currentTime, 0.6); },
+  setWhispers(w) { this.whispers = w; this.wT = 0.4; },
+  setBin(b) { this.bin = b; for (const L of this.loops) if (!L.fixed) this.place(L, L.pan, 0.02); },
 
-  noise(type, secs) {
-    const ac = this.ac, sr = ac.sampleRate, n = Math.floor(sr * secs), x = Math.floor(sr * 0.05);
-    const raw = new Float32Array(n + x);
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0;
-    for (let i = 0; i < n + x; i++) {
-      const w = Math.random() * 2 - 1;
-      if (type === 'white') raw[i] = w * 0.5;
-      else if (type === 'pink') {
-        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852;
-        b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
-        raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
-      } else { br = (br + 0.02 * w) / 1.02; raw[i] = br * 3.2; }
-    }
-    const buf = ac.createBuffer(1, n, sr), d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = raw[i];
-    for (let i = 0; i < x; i++) { const t = i / x; d[i] = raw[i] * t + raw[n + i] * (1 - t); }  // seamless loop point
-    return buf;
+  noiseBuffer(sec) {
+    const b = this.ac.createBuffer(1, Math.round(SR * sec), SR), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return b;
   },
   impulse(sec, decay) {
     const ac = this.ac, n = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(2, n, ac.sampleRate);
@@ -352,35 +950,117 @@ const Sound = {
     }
     return b;
   },
+  buffer(name, i) {
+    const k = name + ':' + i;
+    let b = this.cache.get(k);
+    if (b) return b;
+    const set = BANK[name];
+    if (!set || !set[i] || !this.ac) return null;
+    const v = set[i];
+    b = this.ac.createBuffer(v.length, v[0].length, SR);
+    v.forEach((ch, c) => b.getChannelData(c).set(ch));
+    this.cache.set(k, b);
+    return b;
+  },
+  count(name) { return BANK[name] ? BANK[name].length : 0; },
+  weights(pan) {
+    const n = this.zones.length, z = ((clamp(pan, -1, 1) * 0.9 + 1) / 2) * (n - 1), i = Math.min(n - 2, Math.floor(z)), f = z - i, w = new Array(n).fill(0);
+    w[i] = Math.cos((f * Math.PI) / 2); w[i + 1] = Math.sin((f * Math.PI) / 2);
+    return w;
+  },
   voice(pan, gain = 1) {
     const ac = this.ac, g = ac.createGain(), p = clamp(pan, -1, 1);
     g.gain.value = gain;
     if (this.bin && this.zones.length) {
-      // crossfade between the two nearest binaural positions
-      const z = ((p * 0.9 + 1) / 2) * (this.zones.length - 1), i = Math.min(this.zones.length - 2, Math.floor(z)), f = z - i;
-      const a = ac.createGain(), b = ac.createGain();
-      a.gain.value = Math.cos((f * Math.PI) / 2); b.gain.value = Math.sin((f * Math.PI) / 2);
-      g.connect(a); a.connect(this.zones[i]); g.connect(b); b.connect(this.zones[i + 1]);
+      const w = this.weights(p);
+      w.forEach((v, i) => { if (v < 0.001) return; const z = ac.createGain(); z.gain.value = v; g.connect(z); z.connect(this.zones[i]); });
     } else if (ac.createStereoPanner) { const sp = ac.createStereoPanner(); sp.pan.value = p * 0.85; g.connect(sp); sp.connect(this.out); }
     else g.connect(this.out);
     return g;
+  },
+  // a looping texture that can move around the head as the hand moves
+  loop(name, ftype, f, fixed) {
+    const ac = this.ac, s = ac.createBufferSource(), buf = this.buffer(name, 0);
+    const g = ac.createGain(); g.gain.value = 0;
+    const L = { g, f: null, pan: 0, fixed: !!fixed, w: null, sg: null, sp: null };
+    this.loops.push(L);
+    if (!buf) return L;
+    s.buffer = buf; s.loop = true;
+    let head = s;
+    if (ftype) { const fl = ac.createBiquadFilter(); fl.type = ftype; fl.frequency.value = f; s.connect(fl); head = fl; L.f = fl; }
+    head.connect(g);
+    if (fixed) g.connect(this.out);
+    else {
+      L.w = this.zones.map(z => { const w = ac.createGain(); w.gain.value = 0; g.connect(w); w.connect(z); return w; });
+      if (ac.createStereoPanner) { L.sg = ac.createGain(); L.sp = ac.createStereoPanner(); g.connect(L.sg); L.sg.connect(L.sp); L.sp.connect(this.out); }
+      this.place(L, 0, 0.001);
+    }
+    s.start(0, Math.random() * buf.duration);
+    return L;
+  },
+  place(L, pan, tc = 0.05) {
+    if (!L || L.fixed) return;
+    const t = this.ac.currentTime;
+    L.pan = pan;
+    const useBin = this.bin && L.w && L.w.length;
+    if (L.w) { const w = useBin ? this.weights(pan) : null; L.w.forEach((g, i) => g.gain.setTargetAtTime(useBin ? w[i] : 0, t, tc)); }
+    if (L.sg) { L.sg.gain.setTargetAtTime(useBin ? 0 : 1, t, tc); L.sp.pan.setTargetAtTime(clamp(pan, -1, 1) * 0.85, t, tc); }
+  },
+  loopTo(L, gain, pan, f) {
+    if (!this.ac || !L) return;
+    const t = this.ac.currentTime;
+    L.g.gain.setTargetAtTime(gain, t, 0.04);
+    if (f && L.f) L.f.frequency.setTargetAtTime(f, t, 0.05);
+    if (pan != null && Math.abs(pan - L.pan) > 0.01) this.place(L, pan);
+  },
+  play(name, pan, gain = 1, rate = 1, delay = 0) {
+    if (!this.on()) return null;
+    const n = this.count(name);
+    if (!n) return null;
+    const buf = this.buffer(name, (Math.random() * n) | 0);
+    if (!buf) return null;
+    const s = this.ac.createBufferSource();
+    s.buffer = buf; s.playbackRate.value = rate;
+    if (buf.numberOfChannels > 1) { const g = this.ac.createGain(); g.gain.value = gain; s.connect(g); g.connect(this.out); }
+    else s.connect(this.voice(pan, gain));
+    s.start(this.ac.currentTime + Math.max(0, delay));
+    return s;
+  },
+  // a short excerpt of a texture, with soft edges
+  slice(name, pan, dur, gain, delay = 0) {
+    if (!this.on()) return;
+    const b = this.buffer(name, 0);
+    if (!b) return;
+    const t = this.ac.currentTime + delay, s = this.ac.createBufferSource(), g = this.ac.createGain();
+    s.buffer = b;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + Math.min(0.03, dur * 0.25));
+    g.gain.setValueAtTime(gain, t + dur * 0.6);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    s.connect(g); g.connect(this.voice(pan));
+    s.start(t, Math.random() * Math.max(0, b.duration - dur)); s.stop(t + dur + 0.05);
+  },
+  // a one-shot that travels from one side of the head to the other
+  travel(name, from, to, gain) {
+    if (!this.on()) return 0;
+    const n = this.count(name), buf = n && this.buffer(name, (Math.random() * n) | 0);
+    if (!buf) return 0;
+    const ac = this.ac, t = ac.currentTime, dur = buf.duration, s = ac.createBufferSource(), g = ac.createGain();
+    s.buffer = buf; g.gain.value = gain; s.connect(g);
+    if (this.bin && this.zones.length) {
+      const gs = this.zones.map(z => { const w = ac.createGain(); w.gain.value = 0; g.connect(w); w.connect(z); return w; });
+      for (let k = 0; k <= 16; k++) { const w = this.weights(from + ((to - from) * k) / 16); gs.forEach((q, i) => q.gain.linearRampToValueAtTime(w[i], t + (dur * k) / 16)); }
+    } else if (ac.createStereoPanner) {
+      const sp = ac.createStereoPanner(); sp.pan.setValueAtTime(from * 0.85, t); sp.pan.linearRampToValueAtTime(to * 0.85, t + dur);
+      g.connect(sp); sp.connect(this.out);
+    } else g.connect(this.out);
+    s.start(t);
+    return dur;
   },
   env(p, t, peak, a, d) {
     p.setValueAtTime(0.0001, t);
     p.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a);
     p.exponentialRampToValueAtTime(0.0001, t + a + d);
-  },
-  burst(dest, o) {
-    const ac = this.ac, t = o.t != null ? o.t : ac.currentTime, a = o.a != null ? o.a : 0.001;
-    const s = ac.createBufferSource(); s.buffer = this.buf[o.type || 'white']; s.playbackRate.value = o.rate || 1;
-    const f = ac.createBiquadFilter(); f.type = o.filter || 'bandpass'; f.Q.value = o.q != null ? o.q : 1;
-    f.frequency.setValueAtTime(o.f, t);
-    if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + a + o.d);
-    const g = ac.createGain(); this.env(g.gain, t, o.peak, a, o.d);
-    s.connect(f); f.connect(g); g.connect(dest);
-    const len = a + o.d + 0.03;
-    s.start(t, Math.random() * Math.max(0, s.buffer.duration - len - 0.05));
-    s.stop(t + len);
   },
   tone(dest, o) {
     const ac = this.ac, t = o.t != null ? o.t : ac.currentTime, a = o.a != null ? o.a : 0.002;
@@ -393,251 +1073,62 @@ const Sound = {
   },
 
   // bubble wrap
-  pop(pan, size, delay, pitch = 1) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime + (delay || 0), k = rand(0.85, 1.18) * pitch;
-    this.burst(d, { t, f: (2400 - size * 1100) * k, q: 1.4, peak: 0.8, d: rand(0.03, 0.055) });
-    this.burst(d, { t, f: 5200, filter: 'highpass', q: 0.7, peak: 0.4, a: 0.0005, d: 0.012 });
-    this.tone(d, { t, f: (240 - size * 100) * k, f2: 60, glide: 0.05, peak: 0.5, d: 0.075 });
-    if (Math.random() < 0.35) this.burst(d, { t: t + rand(0.012, 0.03), f: rand(3000, 6000), q: 3, peak: 0.12, d: 0.01 });
-  },
-  squeak(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan, 0.9), t = this.ac.currentTime, f = rand(1400, 1900);
-    this.tone(d, { t, type: 'triangle', f, f2: f * rand(1.25, 1.45), glide: 0.08, peak: 0.05, a: 0.012, d: 0.07 });
-    this.burst(d, { t, f: rand(2500, 4000), q: 2.5, peak: 0.2, a: 0.004, d: 0.05 });
-  },
+  pop(pan, size, delay, pitch = 1) { this.play(size < 0.33 ? 'pop_s' : size < 0.66 ? 'pop_m' : 'pop_l', pan, 0.9, pitch * rand(0.95, 1.05), delay); },
+  squeak(pan) { this.play('squeak', pan, 0.45, rand(0.95, 1.08)); },
   crinkle(pan, amt) {
-    if (!this.on()) return;
-    const d = this.voice(pan, 0.8), t = this.ac.currentTime, n = 1 + Math.floor(amt * 5);
-    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.06), f: rand(2800, 7500), q: rand(2, 6), peak: rand(0.05, 0.16) * (0.4 + amt), a: 0.0008, d: rand(0.004, 0.014) });
-  },
-  rustle(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.burst(d, { t, type: 'pink', f: 3000, q: 0.8, peak: 0.08, a: 0.3, d: 0.5 });
-    for (let i = 0; i < 26; i++) this.burst(d, { t: t + rand(0, 0.75), f: rand(2500, 7000), q: rand(1.5, 4), peak: rand(0.03, 0.1), a: 0.001, d: rand(0.006, 0.02) });
-  },
-
-  // kinetic sand
-  sandCut(pan, vel) {
     if (!this.ac) return;
-    const t = this.ac.currentTime, v = clamp(vel / 700, 0, 1), L = this.sandL;
-    L.g.gain.setTargetAtTime(v * 0.5, t, 0.035);
-    L.f.frequency.setTargetAtTime(1100 + v * 1400, t, 0.05);
-    if (L.p) L.p.pan.setTargetAtTime(pan * 0.85, t, 0.05);
-    if (!this.on() || v < 0.02) return;
-    const d = this.voice(pan, 0.9), n = Math.floor(v * 3 + Math.random());
-    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.03), f: rand(2600, 6500), q: rand(3, 7), peak: rand(0.06, 0.22), a: 0.0006, d: rand(0.003, 0.008) });
+    const L = this.crinkleL, t = this.ac.currentTime;
+    this.place(L, pan);
+    L.g.gain.cancelScheduledValues(t);
+    L.g.gain.setTargetAtTime(0.25 + amt * 0.6, t, 0.02);
+    L.g.gain.setTargetAtTime(0, t + 0.09, 0.07);
   },
-  grains(pan, n) {
-    if (!this.on()) return;
-    const d = this.voice(pan, 0.8), t = this.ac.currentTime;
-    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.05), f: rand(2600, 6500), q: rand(3, 7), peak: rand(0.05, 0.15), a: 0.0006, d: rand(0.003, 0.008) });
-  },
-  thud(pan, mass) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime, m = clamp(mass, 0.15, 1);
-    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 380, q: 0.8, peak: 0.9 * m + 0.1, a: 0.004, d: 0.16 });
-    this.tone(d, { t, f: 95, f2: 48, glide: 0.1, peak: 0.35 * m, a: 0.004, d: 0.12 });
-    this.burst(d, { t: t + 0.01, type: 'pink', f: 1800, q: 0.7, peak: 0.18 * m, a: 0.01, d: 0.25 });
-  },
-  crumble(pan, mass) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime, m = clamp(mass, 0.15, 1);
-    this.burst(d, { t, type: 'pink', f: 2200, f2: 1400, q: 0.6, peak: 0.28 * m + 0.05, a: 0.03, d: 0.5 });
-    const n = Math.floor(18 + m * 30);
-    for (let i = 0; i < n; i++) {
-      const u = Math.pow(Math.random(), 1.8);
-      this.burst(d, { t: t + u * 0.55, f: rand(2400, 7000), q: rand(3, 8), peak: rand(0.05, 0.2) * (1 - u * 0.6), a: 0.0006, d: rand(0.003, 0.01) });
-    }
-  },
-  crunch(pan, amt) {
-    // fingertip squishing kinetic sand: a soft, mushy press full of tiny grain ticks
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime, a = clamp(amt, 0.1, 1);
-    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 700, f2: 300, q: 1.5, peak: 0.35 * a, a: 0.008, d: 0.09 });
-    this.burst(d, { t, type: 'pink', f: 2600, q: 0.9, peak: 0.16 * a, a: 0.006, d: 0.12 });
-    const n = 4 + Math.floor(a * 14);
-    for (let i = 0; i < n; i++) this.burst(d, { t: t + rand(0, 0.1), f: rand(2500, 7000), q: rand(3, 8), peak: rand(0.04, 0.16) * a + 0.02, a: 0.0006, d: rand(0.003, 0.008) });
-  },
-  sweep() {
-    if (!this.on()) return;
-    this.burst(this.voice(0), { type: 'pink', f: 450, f2: 2600, q: 0.8, peak: 0.3, a: 0.3, d: 0.6 });
-  },
-
+  rustle(pan) { this.slice('crinkle', pan, 0.9, 0.7); this.slice('brush', -pan, 0.9, 0.4); },
+  popit(pan, pitch, delay) { this.play('popit', pan, 0.9, pitch * rand(0.97, 1.03), delay); },
+  flip(pan) { this.slice('brush', pan, 0.35, 0.8); this.play('popit', pan, 0.9, 0.55, 0.32); },
+  // kinetic sand
+  sandCut(pan, vel) { if (!this.ac) return; const v = clamp(vel / 700, 0, 1); this.loopTo(this.sandL, v * 1.1, pan, 2500 + v * 6000); },
+  grains(pan, n) { this.slice('sandCut', pan, 0.04 + n * 0.012, 0.6); },
+  thud(pan, mass) { this.play('sandThud', pan, 0.4 + 0.6 * clamp(mass, 0, 1), rand(0.92, 1.08)); },
+  crumble(pan, mass) { this.play('sandCrumble', pan, 0.35 + 0.55 * clamp(mass, 0, 1), rand(0.95, 1.05)); },
+  crunch(pan, amt) { this.play('sandSquish', pan, 0.3 + 0.6 * clamp(amt, 0, 1), rand(0.92, 1.08)); },
+  sweep() { this.slice('brush', rand(-0.4, 0.4), 1.1, 0.9); },
   // slime
   slimeMove(pan, speed, press) {
     if (!this.ac) return;
-    const t = this.ac.currentTime, v = clamp(speed / 900, 0, 1) * (0.35 + 0.65 * press), A = this.slimeA, B = this.slimeB;
-    A.g.gain.setTargetAtTime(v * 0.8, t, 0.05);
-    A.f.frequency.setTargetAtTime(260 + v * 900 + Math.sin(t * 11) * 70 + Math.random() * 80, t, 0.03);
-    B.g.gain.setTargetAtTime(v * v * 0.22, t, 0.06);
-    B.f.frequency.setTargetAtTime(900 + v * 700, t, 0.06);
-    if (A.p) { A.p.pan.setTargetAtTime(pan * 0.85, t, 0.05); B.p.pan.setTargetAtTime(pan * 0.85, t, 0.05); }
+    const v = clamp(speed / 900, 0, 1) * (0.35 + 0.65 * press);
+    this.loopTo(this.slimeA, v * 0.55, pan);
+    this.loopTo(this.slimeB, Math.min(1, v * 1.4) * 0.75, pan);
   },
   click(pan, s, delay) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime + (delay || 0), f = rand(650, 1700);
-    this.tone(d, { t, f, f2: f * rand(1.5, 2.4), glide: 0.012, peak: 0.28 * s, a: 0.0008, d: rand(0.012, 0.03) });
-    this.burst(d, { t, f: rand(1800, 4200), q: 3.5, peak: 0.3 * s, a: 0.0005, d: 0.008 });
+    if (s >= 0.8) this.play('slimePop', pan, 0.8 * Math.min(1.2, s), rand(0.9, 1.1), delay);
+    else this.play('slimeTick', pan, s * 0.8, rand(0.85, 1.2), delay);
   },
-  squish(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 800, f2: 220, q: 5, peak: 0.6, a: 0.012, d: 0.2 });
-    this.burst(d, { t, type: 'pink', f: 1300, q: 3, peak: 0.12, a: 0.006, d: 0.12 });
-    this.click(pan, 0.6, 0.03); this.click(pan, 0.4, 0.07);
-  },
-  suction(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.tone(d, { t, f: 190, f2: rand(560, 820), glide: 0.05, peak: 0.2, a: 0.003, d: 0.06 });
-    this.burst(d, { t, type: 'pink', f: 900, f2: 2300, q: 4, peak: 0.16, a: 0.003, d: 0.06 });
-    this.click(pan, 0.5, 0.035);
-  },
-
-  // floral foam: a hollow poke and a dense burst of crisp cell-wall cracks; fresh foam cracks far more
+  squish(pan) { this.play('slimeSquish', pan, 0.8, rand(0.9, 1.1)); },
+  suction(pan) { this.play('slimeSuction', pan, 0.6, rand(0.9, 1.1)); },
+  // foam
   foam(pan, amt, fresh) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime, a = clamp(amt, 0.1, 1), f = clamp(fresh, 0, 1);
-    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 420, q: 1.2, peak: 0.3 * a + 0.05, a: 0.003, d: 0.06 });
-    this.burst(d, { t, f: rand(1800, 2600), q: 0.8, peak: (0.1 + 0.25 * f) * a, a: 0.002, d: 0.05 + 0.05 * f });
-    const n = Math.floor(3 + a * (6 + 26 * f));
-    for (let i = 0; i < n; i++) {
-      const u = Math.pow(Math.random(), 1.6);
-      this.burst(d, { t: t + u * (0.05 + 0.08 * a), f: rand(1400, 6500), q: rand(2, 7), peak: (rand(0.05, 0.22) * f + 0.03) * (1 - u * 0.5), a: 0.0005, d: rand(0.002, 0.01) });
-    }
+    const a = clamp(amt, 0.1, 1);
+    if (fresh > 0.25) this.play(a >= 1 ? 'foamBig' : 'foamSmall', pan, (0.45 + 0.5 * fresh) * (a >= 1 ? 1 : 0.75), rand(0.92, 1.08));
+    else this.play('foamDull', pan, 0.5 * a + 0.2, rand(0.9, 1.1));
   },
-
-  // tapping: a fingernail click, the object's resonant modes and a little body noise
-  tap(pan, key, pitch, vel) {
-    if (!this.on()) return;
-    const M = TAP_MATS[key], d = this.voice(pan), t = this.ac.currentTime;
-    this.burst(d, { t, f: 4500, filter: 'highpass', q: 0.7, peak: 0.22 * vel, a: 0.0004, d: 0.007 });
-    for (const [r, g, dec] of M.modes) this.tone(d, { t, f: M.f0 * pitch * r * rand(0.995, 1.005), peak: g * vel, a: 0.0012, d: dec });
-    this.burst(d, { t, f: M.nf * pitch, q: M.nq, peak: M.np * vel, a: 0.001, d: M.nd });
-    if (key === 'sponge') this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 500, q: 1, peak: 0.3 * vel, a: 0.004, d: 0.06 });
-  },
-  pluck(pan, k, delay) {
-    if (!this.on()) return;
-    const d = this.voice(pan, 0.9), t = this.ac.currentTime + (delay || 0), f = 2300 + k * 42 + rand(-50, 50);
-    this.tone(d, { t, f, peak: 0.1, a: 0.0005, d: 0.02 });
-    this.tone(d, { t, f: f * 2.7, peak: 0.03, a: 0.0005, d: 0.01 });
-    this.burst(d, { t, f: 5000, filter: 'highpass', peak: 0.12, a: 0.0004, d: 0.004 });
-  },
+  // tapping
+  tap(pan, key, pitch, vel) { this.play('tap_' + key, pan, 0.9 * vel, pitch); },
+  pluck(pan, k, delay) { this.play('pluck', pan, 0.55, ((2300 + k * 42) / 2400) * rand(0.99, 1.01), delay); },
   scratch(pan, speed, key) {
     if (!this.ac) return;
-    const t = this.ac.currentTime, L = this.scratchL, v = key ? clamp(speed / 800, 0, 1) : 0;
-    L.g.gain.setTargetAtTime(v * 0.45, t, 0.03);
-    if (key) {
-      const [f, q] = TAP_MATS[key].scr;
-      L.f.frequency.setTargetAtTime(f * (0.85 + v * 0.3), t, 0.04);
-      L.f.Q.setTargetAtTime(q, t, 0.05);
-    }
-    if (L.p) L.p.pan.setTargetAtTime(pan * 0.85, t, 0.05);
-    if (key === 'sponge' && v > 0.05 && Math.random() < v * 0.5) this.grains(pan, 2);
+    const v = key ? clamp(speed / 800, 0, 1) : 0;
+    for (const m in this.scr) this.loopTo(this.scr[m], m === key ? v * 0.75 : 0, m === key ? pan : null);
   },
-
-  loopTo(L, gain, pan, f, q) {
-    if (!this.ac || !L) return;
-    const t = this.ac.currentTime;
-    L.g.gain.setTargetAtTime(gain, t, 0.04);
-    if (f) L.f.frequency.setTargetAtTime(f, t, 0.05);
-    if (q) L.f.Q.setTargetAtTime(q, t, 0.05);
-    if (L.p && pan != null) L.p.pan.setTargetAtTime(clamp(pan, -1, 1) * 0.85, t, 0.05);
-  },
-
-  // pop-it: a soft rubbery bop
-  popit(pan, pitch, delay) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime + (delay || 0), p = pitch * rand(0.97, 1.03);
-    this.tone(d, { t, f: 280 * p, f2: 180 * p, glide: 0.04, peak: 0.45, a: 0.002, d: 0.08 });
-    this.burst(d, { t, f: 1250 * p, q: 2, peak: 0.25, a: 0.001, d: 0.03 });
-    this.burst(d, { t, f: 3600, filter: 'highpass', q: 0.7, peak: 0.07, a: 0.0005, d: 0.006 });
-  },
-  flip(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.burst(d, { t, type: 'pink', f: 700, f2: 2400, q: 0.9, peak: 0.25, a: 0.12, d: 0.25 });
-    this.tone(d, { t: t + 0.32, f: 160, f2: 90, glide: 0.06, peak: 0.35, a: 0.003, d: 0.1 });
-    this.burst(d, { t: t + 0.32, f: 900, q: 1.5, peak: 0.2, a: 0.002, d: 0.05 });
-  },
-
-  // water: a droplet's bubble rings upward in pitch as it closes
-  plink(pan, big, level) {
-    if (!this.on()) return;
-    const d = this.voice(pan, level == null ? 1 : level), t = this.ac.currentTime, f = big ? rand(380, 520) : rand(750, 1250);
-    this.tone(d, { t, f, f2: f * rand(1.8, 2.6), glide: big ? 0.06 : 0.035, peak: big ? 0.3 : 0.22, a: 0.001, d: big ? 0.14 : 0.08 });
-    this.burst(d, { t, type: 'pink', filter: 'lowpass', f: 2600, q: 0.7, peak: big ? 0.22 : 0.12, a: 0.002, d: big ? 0.09 : 0.05 });
-    if (big) this.tone(d, { t: t + 0.05, f: f * 1.5, f2: f * 3, glide: 0.03, peak: 0.08, a: 0.001, d: 0.05 });
-  },
-  nibble(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan, 0.9), t = this.ac.currentTime, f = rand(420, 560);
-    this.tone(d, { t, f, f2: f * 1.7, glide: 0.012, peak: 0.12, a: 0.001, d: 0.025 });
-    this.burst(d, { t, f: 2400, q: 3, peak: 0.08, a: 0.0005, d: 0.006 });
-    this.tone(d, { t: t + 0.06, f: f * 1.2, f2: f * 2, glide: 0.012, peak: 0.07, a: 0.001, d: 0.02 });
-  },
-
-  // zen garden: gravel under a rake, a stone tapped, the bamboo fountain
-  rake(pan, speed) {
-    if (!this.ac) return;
-    const v = clamp(speed / 500, 0, 1);
-    this.loopTo(this.rakeL, v * 0.32, pan, 2600 + v * 1200);
-    this.loopTo(this.rakeLo, v * 0.35, pan);
-    if (this.on() && v > 0.05 && Math.random() < v * 0.7) this.grains(pan, 1 + ((v * 3) | 0));
-  },
-  stoneTap(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.tone(d, { t, f: 360, f2: 330, glide: 0.03, peak: 0.3, a: 0.001, d: 0.05 });
-    this.tone(d, { t, f: 910, peak: 0.08, a: 0.001, d: 0.03 });
-    this.burst(d, { t, f: 1600, q: 2, peak: 0.2, a: 0.0008, d: 0.02 });
-  },
-  shishi() {
-    if (!this.on()) return;
-    const d = this.voice(-0.6, 0.9), t = this.ac.currentTime;
-    this.burst(d, { t, type: 'pink', f: 2600, q: 0.8, peak: 0.03, a: 0.8, d: 0.3 });   // water filling the bamboo
-    this.tone(d, { t: t + 1.1, f: 520, f2: 470, glide: 0.08, peak: 0.35, a: 0.002, d: 0.16 });
-    this.tone(d, { t: t + 1.1, f: 1190, peak: 0.1, a: 0.001, d: 0.08 });
-    this.burst(d, { t: t + 1.1, f: 1500, q: 3, peak: 0.18, a: 0.001, d: 0.03 });
-    this.burst(d, { t: t + 1.2, type: 'pink', filter: 'lowpass', f: 1800, q: 0.7, peak: 0.08, a: 0.01, d: 0.2 });
-    this.tone(this.voice(0.5, 0.5), { t: t + 1.34, f: 515, f2: 470, glide: 0.08, peak: 0.08, a: 0.002, d: 0.14 });   // its echo off the far wall
-  },
-
-  // keyboard switches
-  key(pan, sw, big, up) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime, k = rand(0.94, 1.06), low = big ? 0.72 : 1;
-    if (up) {
-      this.tone(d, { t, f: (sw === 'thock' ? 420 : 560) * k, peak: 0.07, a: 0.001, d: 0.025 });
-      this.burst(d, { t, f: (sw === 'thock' ? 2200 : 3000) * k, q: 1.5, peak: 0.1, a: 0.0008, d: 0.018 });
-      if (sw === 'click') this.burst(d, { t, f: 5200, filter: 'highpass', q: 0.7, peak: 0.12, a: 0.0004, d: 0.004 });
-      return;
-    }
-    if (sw === 'thock') {
-      this.tone(d, { t, f: 210 * k * low, f2: 170 * k * low, glide: 0.03, peak: 0.5, a: 0.001, d: 0.05 });
-      this.tone(d, { t, f: 95 * low, peak: 0.18, a: 0.002, d: 0.07 });
-      this.burst(d, { t, f: 1400 * k * low, q: 1.4, peak: 0.3, a: 0.0008, d: 0.03 });
-      this.burst(d, { t, f: 4200, filter: 'highpass', q: 0.7, peak: 0.08, a: 0.0004, d: 0.006 });
-    } else if (sw === 'clack') {
-      this.burst(d, { t, f: 1800 * k, q: 2, peak: 0.12, a: 0.0006, d: 0.012 });   // the tactile bump
-      this.tone(d, { t: t + 0.006, f: 380 * k * low, f2: 330 * k * low, glide: 0.02, peak: 0.32, a: 0.0008, d: 0.03 });
-      this.burst(d, { t: t + 0.006, f: 3000 * k, q: 1.6, peak: 0.42, a: 0.0006, d: 0.022 });
-      this.burst(d, { t: t + 0.006, f: 6000, filter: 'highpass', q: 0.7, peak: 0.12, a: 0.0004, d: 0.005 });
-    } else {
-      this.burst(d, { t, f: 5200, filter: 'highpass', q: 0.7, peak: 0.35, a: 0.0003, d: 0.004 });   // click jacket
-      this.burst(d, { t: t + 0.009, f: 4200, filter: 'highpass', q: 0.7, peak: 0.22, a: 0.0003, d: 0.004 });
-      this.tone(d, { t, f: 3100 * k, peak: 0.05, a: 0.0005, d: 0.02 });   // spring ping
-      this.tone(d, { t: t + 0.012, f: 320 * k * low, f2: 280 * k * low, glide: 0.02, peak: 0.3, a: 0.001, d: 0.035 });
-      this.burst(d, { t: t + 0.012, f: 2400 * k, q: 1.4, peak: 0.25, a: 0.0008, d: 0.02 });
-    }
-    if (big) {   // stabiliser rattle
-      this.burst(d, { t: t + 0.018, f: 3400, q: 4, peak: 0.1, a: 0.0005, d: 0.01 });
-      this.burst(d, { t: t + 0.03, f: 2900, q: 4, peak: 0.06, a: 0.0005, d: 0.008 });
-    }
-  },
+  // water
+  plink(pan, big, level) { this.play(big ? 'dropL' : 'dropS', pan, 0.9 * (level == null ? 1 : level), rand(0.9, 1.1)); },
+  nibble(pan) { this.play('dropS', pan, 0.35, rand(1.5, 1.9)); this.play('slimeTick', pan, 0.3, 1, 0.05); },
+  // zen garden
+  rake(pan, speed) { if (!this.ac) return; const v = clamp(speed / 500, 0, 1); this.loopTo(this.rakeL, v * 1.25, pan, 3000 + v * 6000); },
+  stoneTap(pan) { this.play('stone', pan, 0.8, rand(0.95, 1.05)); },
+  shishi() { this.play('shishi', -0.6, 0.8, rand(0.97, 1.03)); },
+  // keyboard
+  key(pan, sw, big, up) { this.play((up ? 'ku_' : big ? 'kb_' : 'k_') + sw, pan, up ? 0.5 : 0.85, rand(0.97, 1.03)); },
   bell(pan) {
     if (!this.on()) return;
     const d = this.voice(pan), t = this.ac.currentTime;
@@ -645,45 +1136,35 @@ const Sound = {
     this.tone(d, { t, f: 2100 * 2.76, peak: 0.03, a: 0.001, d: 0.4 });
     this.tone(d, { t, f: 3150, peak: 0.04, a: 0.001, d: 0.5 });
   },
-
   // ice
-  iceHit(pan, fresh) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.tone(d, { t, f: rand(110, 160), f2: 70, glide: 0.12, peak: 0.45, a: 0.002, d: 0.18 });
-    this.burst(d, { t, type: 'brown', filter: 'lowpass', f: 600, q: 0.8, peak: 0.4, a: 0.002, d: 0.08 });
-    this.burst(d, { t, f: 3000, filter: 'highpass', q: 0.7, peak: fresh ? 0.4 : 0.2, a: 0.0004, d: 0.006 });
-  },
-  crackTick(pan, delay, s) {
-    if (!this.on()) return;
-    this.burst(this.voice(pan, 0.9), { t: this.ac.currentTime + delay, f: rand(2500, 7000), filter: 'highpass', q: 0.7, peak: 0.08 + 0.2 * s, a: 0.0004, d: rand(0.002, 0.006) });
-  },
+  iceHit(pan, fresh) { this.play('iceThunk', pan, fresh ? 0.9 : 0.6, rand(0.9, 1.1)); },
+  crackTick(pan, delay, s) { this.play('iceCrack', pan, 0.25 + 0.45 * s, rand(0.9, 1.15), delay); },
   zap(pan) {
     // the laser-like ring of a frozen lake: high frequencies arrive first
     if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime + 0.05;
-    this.tone(d, { t, f: 5200, f2: 160, glide: 0.55, peak: 0.07, a: 0.003, d: 0.6 });
+    const t = this.ac.currentTime + 0.05;
+    this.tone(this.voice(pan), { t, f: 5200, f2: 160, glide: 0.55, peak: 0.07, a: 0.003, d: 0.6 });
     this.tone(this.voice(-pan * 0.6, 0.6), { t: t + 0.08, f: 4200, f2: 140, glide: 0.6, peak: 0.04, a: 0.003, d: 0.6 });
     this.tone(this.voice(pan * 0.3, 0.4), { t: t + 0.19, f: 3600, f2: 130, glide: 0.65, peak: 0.025, a: 0.003, d: 0.6 });
   },
-  shatter(pan) {
-    if (!this.on()) return;
-    const d = this.voice(pan), t = this.ac.currentTime;
-    this.burst(d, { t, f: 2000, filter: 'highpass', q: 0.5, peak: 0.5, a: 0.002, d: 0.45 });
-    this.tone(d, { t, f: 90, f2: 50, glide: 0.2, peak: 0.3, a: 0.003, d: 0.3 });
-    for (let i = 0; i < 50; i++) {
-      const u = Math.pow(Math.random(), 1.5), f = rand(2200, 6500), v = this.voice(rand(-1, 1), 0.9);
-      this.tone(v, { t: t + u * 0.9, f, peak: rand(0.02, 0.07), a: 0.0008, d: rand(0.05, 0.25) });
-      this.tone(v, { t: t + u * 0.9, f: f * 2.31, peak: 0.012, a: 0.0008, d: 0.05 });
-    }
-  },
+  shatter(pan) { this.play('shatter', pan, 0.9); },
   freeze() {
-    if (!this.on()) return;
-    const d = this.voice(0), t = this.ac.currentTime;
-    this.burst(d, { t, type: 'pink', f: 6000, q: 1, peak: 0.03, a: 0.5, d: 0.7 });
-    for (let i = 0; i < 30; i++) this.burst(this.voice(rand(-0.8, 0.8), 0.7), { t: t + rand(0, 1.2), f: rand(4000, 9000), filter: 'highpass', q: 0.7, peak: rand(0.02, 0.07), a: 0.0004, d: rand(0.002, 0.005) });
+    for (let i = 0; i < 12; i++) this.play('iceCrack', rand(-0.8, 0.8), rand(0.05, 0.15), rand(1, 1.4), rand(0, 1.2));
+    this.slice('skate', 0, 1.2, 0.25);
   },
-  skate(pan, speed) { this.loopTo(this.iceL, clamp(speed / 900, 0, 1) * 0.35, pan, 4200 + Math.min(speed, 1500) * 0.8); },
+  skate(pan, speed) { this.loopTo(this.iceL, clamp(speed / 900, 0, 1) * 0.65, pan); },
+  // the ear microphone
+  micRub(tool, pan, level) {
+    this.loopTo(this.brushL, tool === 'brush' ? level * 1.3 : 0, pan);
+    this.loopTo(this.rubL, tool === 'fingers' ? level * 0.75 : 0, pan);
+    this.loopTo(this.fluffL, tool === 'fluffy' ? level * 0.85 : 0, pan);
+  },
+  earTap(pan, g) { this.play('earTap', pan, g, rand(0.9, 1.1)); },
+  brushPat(pan) { this.play('brushPat', pan, 0.6, rand(0.9, 1.1)); },
+  fluffPat(pan) { this.play('fluffPat', pan, 0.7, rand(0.9, 1.1)); },
+  whisper(pan, gain = 0.85) { const s = this.play('whisper', pan, gain, rand(0.96, 1.04)); return s ? s.buffer.duration / s.playbackRate.value : 0; },
+  shh(from, to) { return this.travel('shh', from, to, 0.6); },
+  tk(pan) { this.play('tk', pan, 0.55, rand(0.95, 1.05)); },
 
   chime(pan, steps) {
     if (!this.on()) return;
@@ -695,34 +1176,19 @@ const Sound = {
       this.tone(d, { t, f: f * 3.98, peak: 0.008, a: 0.002, d: 0.4 });
     });
   },
-  crackle(dt) {
-    if (Math.random() < dt * 6) {
-      const d = this.voice(rand(-0.5, 0.5)), t = this.ac.currentTime, n = 1 + ((Math.random() * 4) | 0);
-      for (let i = 0; i < n; i++) this.burst(d, { t: t + i * rand(0.006, 0.035), f: rand(1500, 4500), filter: 'highpass', q: 0.7, peak: rand(0.04, 0.2), a: 0.0005, d: rand(0.002, 0.009) });
-    }
-    if (Math.random() < dt * 0.35) {
-      const d = this.voice(rand(-0.4, 0.4)), t = this.ac.currentTime;
-      this.burst(d, { t, f: 2200, q: 0.8, peak: 0.35, a: 0.0005, d: 0.02 });
-      this.tone(d, { t, f: 140, f2: 60, glide: 0.05, peak: 0.12, d: 0.06 });
-    }
-  },
   silence() {
     if (!this.ac) return;
     const t = this.ac.currentTime;
-    for (const L of [this.sandL, this.slimeA, this.slimeB, this.scratchL, this.waterL, this.brookL, this.rakeL, this.rakeLo, this.iceL]) L.g.gain.setTargetAtTime(0, t, 0.05);
+    for (const L of this.loops) if (L !== this.rainL && L !== this.fireL) L.g.gain.setTargetAtTime(0, t, 0.05);
   },
+  // soft whispers drifting from ear to ear, with a hush or a few tongue clicks between them
   tick(dt) {
-    if (!this.ac || this.muted || this.ac.state !== 'running') return;
-    if (this.fire) this.crackle(dt);
-    if (!this.rain) return;
-    if (Math.random() < dt * 9) {
-      const d = this.voice(rand(-1, 1)), t = this.ac.currentTime + rand(0, 0.015), f = rand(1900, 4800);
-      this.tone(d, { t, f, f2: f * rand(0.55, 0.75), glide: 0.02, peak: rand(0.006, 0.026), a: 0.001, d: rand(0.015, 0.035) });
-    }
-    if (Math.random() < dt * 1.2) {
-      const d = this.voice(rand(-1, 1)), f = rand(700, 1100);
-      this.tone(d, { f, f2: f * 1.6, glide: 0.03, peak: 0.02, a: 0.002, d: 0.05 });
-    }
+    if (!this.ac || this.muted || this.ac.state !== 'running' || !this.whispers) return;
+    if ((this.wT -= dt) > 0) return;
+    const side = (this.wSide = -this.wSide), r = Math.random();
+    if (r < 0.14) this.wT = this.shh(side, -side) + rand(1.5, 3);
+    else if (r < 0.26) { this.tk(side * rand(0.6, 1)); this.wT = rand(2, 4); }
+    else this.wT = this.whisper(side * rand(0.6, 1), 0.75) + rand(1.2, 3.5);
   }
 };
 
@@ -2575,8 +3041,8 @@ const Pond = {
     this.acc = 0;
     this.speed += (inst - this.speed) * Math.min(1, dt * 10);
     const pan = panOf(this.last ? this.last.x : this.LW / 2);
-    Sound.loopTo(Sound.waterL, this.pressed ? clamp(this.speed / 900, 0, 1) * 0.4 : 0, pan, 600 + Math.min(this.speed, 1500) * 0.5);
-    Sound.loopTo(Sound.brookL, 0.028 + 0.01 * Math.sin(clock * 0.8), -0.7);
+    Sound.loopTo(Sound.waterL, this.pressed ? clamp(this.speed / 900, 0, 1) * 0.8 : 0, pan, 900 + Math.min(this.speed, 1500) * 2);
+    Sound.loopTo(Sound.brookL, 0.3 + 0.06 * Math.sin(clock * 0.8), null);
     if (this.pressed && this.speed > 150 && Math.random() < (dt * this.speed) / 150) Sound.plink(pan, false, 0.25);
   },
 
@@ -3438,9 +3904,244 @@ const Ice = {
   progress() { return ['Cracked', this.cov ? this.covN / this.cov.length / this.GOAL : 0]; }
 };
 
+/* ================= EAR MICROPHONE ================= */
+const Mic = {
+  name: 'mic', cursor: 'none', tools: true,
+  label: 'Binaural ear microphone. Brush, tap, rub or whisper into its two ears.',
+  hint: 'A binaural ASMR microphone with two silicone ears. Pick a tool, then brush, tap, rub or whisper into an ear: the left ear plays in your left ear, the right ear in your right, and the closer you get to the ear canal the closer it sounds. Headphones make all the difference.',
+  LW: 0, LH: 0, tool: 'brush', tingles: 0,
+
+  build() {
+    const eh = Math.round(clamp(Math.min(this.LH * 0.56, this.LW * 0.34), 110, 300)), ew = eh * 0.62;
+    const cy = this.LH * 0.44, gap = clamp(this.LW * 0.25, ew * 1.05, 250);
+    this.eh = eh; this.ew = ew; this.cy = cy; this.gap = gap;
+    this.ears = [-1, 1].map(side => ({ side, x: this.LW / 2 + side * gap, y: cy, h: eh, w: ew, glow: 0 }));
+    this.pressed = false; this.cur = null; this.pos = { x: this.LW / 2, y: this.LH * 0.78 }; this.last = this.pos;
+    this.acc = 0; this.speed = 0; this.vx = 0; this.wisps = []; this.wNext = 0; this.show = true; this.auto = null;
+    this.fur = pool(70, () => ({ a: rand(0, TAU), l: rand(0.6, 1.25), c: rand(-0.5, 0.5), s: rand(0.7, 1) }));
+  },
+  earAt(p) {
+    for (const e of this.ears) {
+      const d = Math.hypot((p.x - e.x) / (e.w * 0.62), (p.y - e.y) / (e.h * 0.55));
+      if (d < 1) return { e, d };
+    }
+    return null;
+  },
+  panOf(hit) { return hit ? hit.e.side * (0.7 + 0.3 * (1 - hit.d)) : 0; },
+  near(hit) { return hit ? 1 - hit.d * 0.65 : 0; },
+  touch(hit, tool) {
+    const pan = this.panOf(hit), c = this.near(hit);
+    hit.e.glow = 1;
+    if (tool === 'fingers') { Sound.earTap(pan, 0.45 + 0.55 * c); stats.earTaps++; this.tingle(0.03); }
+    else if (tool === 'brush') { Sound.brushPat(pan); this.tingle(0.02); }
+    else if (tool === 'fluffy') { Sound.fluffPat(pan); this.tingle(0.02); }
+    save(); hud();
+  },
+  whisperInto(hit) {
+    const pan = this.panOf(hit), dur = Sound.whisper(pan, 0.6 + 0.4 * this.near(hit));
+    stats.whispers++;
+    hit.e.glow = 1;
+    for (let i = 0; i < 10; i++) this.wisps.push({ x: this.pos.x + rand(-8, 8), y: this.pos.y + rand(-8, 8), tx: hit.e.x - hit.e.side * hit.e.w * 0.05, ty: hit.e.y + hit.e.h * 0.03, t: -i * 0.08, life: rand(0.8, 1.3) });
+    this.tingle(0.05);
+    save(); hud();
+    return dur || 1.5;
+  },
+  tingle(v) {
+    this.tingles += v;
+    if (this.tingles >= 1) {
+      this.tingles = 0; stats.tingles++; save();
+      Sound.chime(0, [0, 4, 7, 11, 14]);
+      celebrate(this.LW / 2, this.cy);
+      toast('Full tingles');
+    }
+    hud();
+  },
+
+  down(p) {
+    this.pressed = true; this.pos = p; this.last = p; this.show = true; this.auto = null;
+    const hit = this.earAt(p);
+    this.cur = hit;
+    if (!hit) return;
+    if (this.tool === 'whisper') this.wNext = clock + this.whisperInto(hit) + rand(0.2, 0.5);
+    else this.touch(hit, this.tool);
+  },
+  move(p, pressed) {
+    this.pos = p; this.show = true;
+    if (!pressed || !this.pressed) return;
+    const d = Math.hypot(p.x - this.last.x, p.y - this.last.y);
+    this.acc += d; this.vx = this.vx * 0.7 + (p.x - this.last.x) * 0.3; this.last = p;
+    const was = this.cur;
+    this.cur = this.earAt(p);
+    if (this.cur && this.tool === 'whisper' && (!was || was.e !== this.cur.e) && clock > this.wNext - 0.3) this.wNext = clock + this.whisperInto(this.cur) + rand(0.2, 0.5);
+  },
+  up() { this.pressed = false; this.cur = null; },
+  leave() { if (!this.pressed) this.show = false; },
+  extra(p) { const hit = this.earAt(p); if (hit) this.touch(hit, this.tool === 'whisper' ? 'fingers' : this.tool); },
+  exit() { this.pressed = false; this.auto = null; Sound.micRub(this.tool, 0, 0); },
+  setTool(t) { this.tool = t; Sound.micRub(t, 0, 0); hud(); },
+  key() {
+    // the ghost hand works one ear at a time with a random tool
+    if (this.auto) return null;
+    const e = this.ears[(Math.random() * 2) | 0], tool = pick(['brush', 'brush', 'fluffy', 'fingers', 'whisper']);
+    if (tool === 'fingers') {
+      const hit = { e, d: rand(0.1, 0.5) };
+      this.pos = { x: e.x, y: e.y };
+      for (let i = 0; i < 3; i++) setTimeout(() => this.touch(hit, 'fingers'), i * rand(170, 260));
+      return this.pos;
+    }
+    if (tool === 'whisper') { this.pos = { x: e.x - e.side * this.ew * 0.9, y: e.y }; this.whisperInto({ e, d: 0.2 }); return this.pos; }
+    // a slow stroke down the ear and back up
+    this.auto = { e, tool, t: 0, dur: rand(1.1, 1.8), a0: rand(-2.2, -1.2), sweep: rand(2, 3.2) };
+    return { x: e.x, y: e.y };
+  },
+  autoGap() { return rand(1.6, 2.8); },
+
+  update(dt) {
+    let hit = null, tool = this.tool;
+    if (this.auto) {
+      const A = this.auto;
+      A.t += dt;
+      const k = A.t / A.dur, a = A.a0 + A.sweep * Math.sin(Math.min(1, k) * Math.PI), r = 0.35 + 0.15 * Math.sin(k * 7);
+      const p = { x: A.e.x + A.e.side * Math.cos(a) * A.e.w * r, y: A.e.y + Math.sin(a) * A.e.h * r * 0.9 };
+      this.acc += Math.hypot(p.x - this.pos.x, p.y - this.pos.y);
+      this.pos = p; tool = A.tool; hit = this.earAt(p);
+      if (k >= 1) this.auto = null;
+    } else if (this.pressed) hit = this.cur;
+    const inst = this.acc / Math.max(dt, 1e-3);
+    this.acc = 0;
+    this.speed += (inst - this.speed) * Math.min(1, dt * 10);
+    const level = hit && tool !== 'whisper' ? clamp(this.speed / 700, 0, 1) * this.near(hit) : 0;
+    Sound.micRub(tool, this.panOf(hit), level);
+    if (hit) { hit.e.glow = Math.max(hit.e.glow, level); if (level > 0.05) this.tingle(level * dt * 0.08); }
+    if (this.pressed && this.tool === 'whisper' && hit && clock >= this.wNext) this.wNext = clock + this.whisperInto(hit) + rand(0.3, 0.8);
+    for (const e of this.ears) e.glow = Math.max(0, e.glow - dt * 1.5);
+    for (let i = this.wisps.length - 1; i >= 0; i--) { const w = this.wisps[i]; w.t += dt; if (w.t > w.life) this.wisps.splice(i, 1); }
+  },
+
+  earPath() {
+    ctx.beginPath();
+    ctx.moveTo(-0.14, -0.86);
+    ctx.bezierCurveTo(0.18, -1.08, 0.64, -0.9, 0.64, -0.38);
+    ctx.bezierCurveTo(0.66, 0.08, 0.52, 0.34, 0.36, 0.55);
+    ctx.bezierCurveTo(0.26, 0.7, 0.22, 0.96, 0.02, 0.98);
+    ctx.bezierCurveTo(-0.2, 1, -0.27, 0.8, -0.21, 0.6);
+    ctx.bezierCurveTo(-0.16, 0.44, -0.3, 0.3, -0.29, 0.1);
+    ctx.bezierCurveTo(-0.28, -0.3, -0.36, -0.62, -0.14, -0.86);
+    ctx.closePath();
+  },
+  drawEar(e) {
+    const sx = e.w / 0.95, sy = e.h / 2;
+    ctx.save(); ctx.translate(e.x + 8, e.y + 12); ctx.scale(e.side * sx, sy); this.earPath(); ctx.fillStyle = 'rgba(3,14,10,.35)'; ctx.fill(); ctx.restore();
+    ctx.save();
+    ctx.translate(e.x, e.y); ctx.scale(e.side * sx, sy);
+    const g = ctx.createLinearGradient(-0.3, -1, 0.6, 1);
+    g.addColorStop(0, '#f2cfba'); g.addColorStop(0.55, '#e2b39b'); g.addColorStop(1, '#c68b74');
+    this.earPath(); ctx.fillStyle = g; ctx.fill();
+    ctx.lineCap = 'round';
+    // the fold just inside the rim, and the light catching the rim itself
+    ctx.lineWidth = 0.05; ctx.strokeStyle = 'rgba(122,62,46,.35)';
+    ctx.beginPath(); ctx.moveTo(-0.05, -0.74); ctx.bezierCurveTo(0.2, -0.9, 0.52, -0.74, 0.52, -0.36); ctx.bezierCurveTo(0.53, 0.02, 0.42, 0.28, 0.28, 0.46); ctx.stroke();
+    ctx.lineWidth = 0.03; ctx.strokeStyle = 'rgba(255,238,226,.5)';
+    ctx.beginPath(); ctx.moveTo(-0.1, -0.84); ctx.bezierCurveTo(0.2, -1.02, 0.6, -0.86, 0.61, -0.4); ctx.stroke();
+    // the Y-shaped ridge and its shadow
+    ctx.lineWidth = 0.075; ctx.strokeStyle = 'rgba(248,214,196,.85)';
+    ctx.beginPath(); ctx.moveTo(0.24, 0.42); ctx.bezierCurveTo(0.36, 0.1, 0.34, -0.25, 0.2, -0.45); ctx.moveTo(0.3, -0.18); ctx.bezierCurveTo(0.36, -0.42, 0.4, -0.58, 0.38, -0.66); ctx.stroke();
+    ctx.lineWidth = 0.04; ctx.strokeStyle = 'rgba(110,50,38,.28)';
+    ctx.beginPath(); ctx.moveTo(0.17, 0.38); ctx.bezierCurveTo(0.27, 0.08, 0.25, -0.24, 0.11, -0.42); ctx.stroke();
+    // the bowl around the ear canal
+    const cg = ctx.createRadialGradient(0, 0.08, 0.02, 0.02, 0.06, 0.32);
+    cg.addColorStop(0, '#5e322a'); cg.addColorStop(0.5, '#a66956'); cg.addColorStop(1, 'rgba(214,156,132,0)');
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.ellipse(0.03, 0.06, 0.23, 0.31, -0.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(238,198,178,.95)'; ctx.beginPath(); ctx.ellipse(-0.18, 0.08, 0.07, 0.11, 0.2, 0, TAU); ctx.fill();
+    // the canal, with the microphone capsule glinting inside
+    ctx.fillStyle = '#231310'; ctx.beginPath(); ctx.ellipse(-0.05, 0.05, 0.075, 0.085, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(205,214,222,.6)'; ctx.lineWidth = 0.014; ctx.beginPath(); ctx.ellipse(-0.05, 0.05, 0.042, 0.048, 0, 0, TAU); ctx.stroke();
+    if (e.glow > 0.02) { this.earPath(); ctx.fillStyle = `rgba(255,196,170,${(0.22 * e.glow).toFixed(3)})`; ctx.fill(); }
+    ctx.restore();
+  },
+  drawMount() {
+    const L = this.ears[0], R = this.ears[1], h = this.eh * 0.34, x0 = L.x + this.ew * 0.1, x1 = R.x - this.ew * 0.1, y = this.cy - h / 2;
+    // the stand
+    const sg = ctx.createLinearGradient(this.LW / 2 - 12, 0, this.LW / 2 + 12, 0);
+    sg.addColorStop(0, '#2a2e33'); sg.addColorStop(0.5, '#6b737b'); sg.addColorStop(1, '#23272b');
+    ctx.fillStyle = sg; ctx.fillRect(this.LW / 2 - 10, y + h, 20, this.LH - y - h + 10);
+    ctx.fillStyle = 'rgba(3,14,10,.35)'; roundRect(ctx, x0 + 6, y + 10, x1 - x0, h, h * 0.4); ctx.fill();
+    const bg = ctx.createLinearGradient(0, y, 0, y + h);
+    bg.addColorStop(0, '#3b4047'); bg.addColorStop(0.5, '#23272c'); bg.addColorStop(1, '#16191d');
+    ctx.fillStyle = bg; roundRect(ctx, x0, y, x1 - x0, h, h * 0.4); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; roundRect(ctx, x0 + 0.5, y + 0.5, x1 - x0 - 1, h - 1, h * 0.4); ctx.stroke();
+    // a recording light
+    const on = Sound.ac && !Sound.muted;
+    ctx.fillStyle = on ? `rgba(240,80,70,${(0.65 + 0.35 * Math.sin(clock * 3)).toFixed(3)})` : 'rgba(120,60,60,.6)';
+    ctx.beginPath(); ctx.arc(this.LW / 2 - 16, this.cy, 3.5, 0, TAU); ctx.fill();
+    ctx.font = '500 10px "DM Mono", ui-monospace, Menlo, monospace'; ctx.fillStyle = 'rgba(214,236,222,.55)'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('REC', this.LW / 2 - 9, this.cy + 0.5);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = 'rgba(214,236,222,.45)';
+    for (const e of this.ears) ctx.fillText(e.side < 0 ? 'L' : 'R', e.x, e.y + e.h * 0.62);
+  },
+  drawTool(x, y, tool) {
+    const bend = clamp(this.vx * 0.08, -1, 1);
+    ctx.save();
+    ctx.translate(x, y);
+    if (tool === 'brush') {
+      ctx.rotate(-0.55 + bend * 0.25);
+      ctx.fillStyle = 'rgba(3,14,10,.25)'; roundRect(ctx, 2, -170, 12, 130, 6); ctx.fill();
+      const hg = ctx.createLinearGradient(-6, 0, 6, 0); hg.addColorStop(0, '#2c2420'); hg.addColorStop(0.45, '#57463c'); hg.addColorStop(1, '#1f1916');
+      ctx.fillStyle = hg; roundRect(ctx, -6, -175, 12, 130, 6); ctx.fill();
+      const fg = ctx.createLinearGradient(-8, 0, 8, 0); fg.addColorStop(0, '#9aa3aa'); fg.addColorStop(0.5, '#e7ecef'); fg.addColorStop(1, '#8a939a');
+      ctx.fillStyle = fg; roundRect(ctx, -8, -52, 16, 22, 3); ctx.fill();
+      const bg = ctx.createRadialGradient(bend * 5, -18, 2, bend * 4, -16, 26); bg.addColorStop(0, '#f4e7d6'); bg.addColorStop(1, '#c9ae90');
+      ctx.fillStyle = bg; ctx.beginPath(); ctx.moveTo(-9, -32); ctx.quadraticCurveTo(-16 + bend * 8, -8, bend * 10, 2); ctx.quadraticCurveTo(16 + bend * 8, -8, 9, -32); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,96,70,.35)'; ctx.lineWidth = 0.7;
+      for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(i * 2.2, -31); ctx.quadraticCurveTo(i * 3 + bend * 6, -12, i * 1.6 + bend * 10, 0); ctx.stroke(); }
+    } else if (tool === 'fingers') {
+      ctx.rotate(-0.4);
+      ctx.fillStyle = 'rgba(3,14,10,.25)'; roundRect(ctx, -9, -8, 26, 120, 13); ctx.fill();
+      const sg = ctx.createLinearGradient(-13, 0, 13, 0); sg.addColorStop(0, '#d6a58c'); sg.addColorStop(0.5, '#f0c9b2'); sg.addColorStop(1, '#c99178');
+      ctx.fillStyle = sg; roundRect(ctx, -13, -14, 26, 120, 13); ctx.fill();
+      ctx.fillStyle = 'rgba(255,238,230,.8)'; roundRect(ctx, -8, -11, 16, 18, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(150,100,84,.35)'; ctx.lineWidth = 1; roundRect(ctx, -8, -11, 16, 18, 7); ctx.stroke();
+    } else if (tool === 'fluffy') {
+      const r = 26;
+      ctx.fillStyle = 'rgba(3,14,10,.25)'; ctx.beginPath(); ctx.arc(5, 8, r, 0, TAU); ctx.fill();
+      const fg = ctx.createRadialGradient(-6, -8, 2, 0, 0, r); fg.addColorStop(0, '#b9b2a8'); fg.addColorStop(1, '#6d665f');
+      ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, TAU); ctx.fill();
+      ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+      for (const f of this.fur) {
+        const a = f.a + Math.sin(clock * 3 + f.a * 5) * 0.05 + bend * 0.2;
+        ctx.strokeStyle = `rgba(${f.s > 0.85 ? '220,214,204' : '150,142,132'},${(0.5 + 0.4 * f.s).toFixed(2)})`;
+        ctx.beginPath(); ctx.moveTo(Math.cos(f.a) * r * 0.5, Math.sin(f.a) * r * 0.5);
+        ctx.quadraticCurveTo(Math.cos(a + f.c) * r * 0.9, Math.sin(a + f.c) * r * 0.9, Math.cos(a) * r * f.l, Math.sin(a) * r * f.l);
+        ctx.stroke();
+      }
+    } else {
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 22);
+      g.addColorStop(0, 'rgba(255,246,236,.35)'); g.addColorStop(1, 'rgba(255,246,236,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 22, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,246,236,.6)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.ellipse(0, 0, 9, 4, 0, 0, TAU); ctx.stroke();
+    }
+    ctx.restore();
+  },
+  draw() {
+    this.drawMount();
+    for (const e of this.ears) this.drawEar(e);
+    for (const w of this.wisps) {
+      if (w.t < 0) continue;
+      const k = w.t / w.life, x = w.x + (w.tx - w.x) * k + Math.sin(w.t * 9 + w.x) * 3, y = w.y + (w.ty - w.y) * k;
+      ctx.fillStyle = `rgba(255,248,240,${(0.3 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(x, y, 3 + k * 6, 0, TAU); ctx.fill();
+    }
+    if (this.auto) this.drawTool(this.pos.x, this.pos.y, this.auto.tool);
+    else if (this.show) this.drawTool(this.pos.x, this.pos.y, this.tool);
+  },
+  statItems() { return [[stats.tingles, 'full tingles'], [stats.whispers, 'whispers'], [stats.earTaps, 'ear taps']]; },
+  progress() { return ['Tingles', this.tingles]; }
+};
+
 /* ---------- wiring ---------- */
-const trays = { wrap: Wrap, sand: Sand, slime: Slime, foam: Foam, tap: Tap, pond: Pond, zen: Zen, keys: Keys, ice: Ice };
-const ORDER = ['wrap', 'sand', 'slime', 'foam', 'tap', 'pond', 'zen', 'keys', 'ice'];
+const trays = { wrap: Wrap, sand: Sand, slime: Slime, foam: Foam, tap: Tap, pond: Pond, zen: Zen, keys: Keys, ice: Ice, mic: Mic };
+const ORDER = ['wrap', 'sand', 'slime', 'foam', 'tap', 'pond', 'zen', 'keys', 'ice', 'mic'];
 
 function fit(t) {
   if (!W || !H) return;
@@ -3496,6 +4197,7 @@ function select(name) {
   canvas.style.cursor = t.cursor;
   $hint.textContent = t.hint;
   $keysHint.hidden = !!t.typing;
+  $tools.hidden = !t.tools;
   fit(t);
   hud();
   remember('tray', t.name);
@@ -3644,12 +4346,13 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  const n = parseInt(e.key, 10);
+  const n = e.key === '0' ? 10 : parseInt(e.key, 10);
   if (n >= 1 && n <= ORDER.length) { select(ORDER[n - 1]); wake(); if (current.typing) canvas.focus({ preventScroll: true }); }
   else if (e.key === 'm' || e.key === 'M') $sound.click();
   else if (e.key === 'r' || e.key === 'R') $rain.click();
   else if (e.key === 'f' || e.key === 'F') $fire.click();
   else if (e.key === 'a' || e.key === 'A') $auto.click();
+  else if (e.key === 'w' || e.key === 'W') $whisper.click();
 });
 document.addEventListener('keyup', e => { if (current && current.typing) current.keyUp(e); });
 window.addEventListener('blur', () => { if (current && current.releaseAll) current.releaseAll(); });
@@ -3667,7 +4370,13 @@ const toggle = (btn, fn) => btn.addEventListener('click', () => {
 toggle($sound, on => { Sound.setMuted(!on); remember('muted', on ? '0' : '1'); });
 toggle($rain, on => Sound.setRain(on));
 toggle($fire, on => Sound.setFire(on));
-toggle($bin, on => { Sound.bin = on; remember('bin', on ? '1' : '0'); });
+toggle($bin, on => { Sound.setBin(on); remember('bin', on ? '1' : '0'); });
+toggle($whisper, on => Sound.setWhispers(on));
+for (const b of toolBtns) b.addEventListener('click', () => {
+  wake();
+  for (const q of toolBtns) q.setAttribute('aria-pressed', String(q === b));
+  Mic.setTool(b.dataset.tool);
+});
 toggle($auto, on => { auto.on = on; auto.t = 0.25; auto.hold = 0; if (!on) Sound.silence(); });
 document.addEventListener('visibilitychange', () => {
   if (!Sound.ac) return;

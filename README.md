@@ -2,7 +2,7 @@
 
 A browser game: your camera, your real face, your best **sigma face**.
 
-> Also in this repo: **[Quiet Hands](asmr/)**, an ASMR game with nine trays: bubbles, kinetic sand, slime, foam, tapping, a koi pond, a zen garden, a mechanical keyboard and ice. See [`asmr/README.md`](asmr/README.md).
+> Also in this repo: **[Quiet Hands](asmr/)**, an ASMR game with ten trays: bubbles, kinetic sand, slime, foam, tapping, a koi pond, a zen garden, a mechanical keyboard, ice and a binaural ear mic, plus whispers. See [`asmr/README.md`](asmr/README.md).
 
 ## How to play
 
